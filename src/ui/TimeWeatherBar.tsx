@@ -1,7 +1,6 @@
 import {
   Clock,
   CloudRain,
-  Focus,
   Pause,
   Play,
   Sparkles,
@@ -33,8 +32,6 @@ export function TimeWeatherBar() {
   const simSpeed = useCityStore((s) => s.simSpeed);
   const setSimSpeed = useCityStore((s) => s.setSimSpeed);
   const togglePlayPause = useCityStore((s) => s.togglePlayPause);
-  const tiltShiftEnabled = useCityStore((s) => s.tiltShiftEnabled);
-  const toggleTiltShift = useCityStore((s) => s.toggleTiltShift);
   const soundEnabled = useCityStore((s) => s.soundEnabled);
   const toggleSound = useCityStore((s) => s.toggleSound);
   const highQuality = useCityStore((s) => s.highQuality);
@@ -153,21 +150,6 @@ export function TimeWeatherBar() {
             </button>
           ))}
         </div>
-
-        <button
-          type="button"
-          title="Toggle Tilt-Shift Miniature Blur"
-          aria-label="Toggle tilt-shift depth of field"
-          aria-pressed={tiltShiftEnabled}
-          onClick={toggleTiltShift}
-          className={`flex h-7 w-7 items-center justify-center rounded-lg transition ${
-            tiltShiftEnabled
-              ? 'bg-amber-400/25 text-amber-200'
-              : 'bg-white/5 text-stone-400 hover:bg-white/10'
-          }`}
-        >
-          <Focus className="h-3.5 w-3.5" />
-        </button>
 
         <button
           type="button"

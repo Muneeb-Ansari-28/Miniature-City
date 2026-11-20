@@ -10,7 +10,7 @@ An interactive, browser-based stylized 3D miniature city diorama built with **Re
 - **Autonomous Traffic & Signals:** Right-hand-drive directed road graph with Bezier intersection turns, phased NS/EW traffic lights, safe bumper-to-bumper following headway, automatic headlights at dusk/night, and reactive brake lights.
 - **Pedestrians & Restaurant Dining:** 32 citizens navigating sidewalks and signal-aware crosswalks, claiming patio seats (respecting capacity), and vacating cleanly.
 - **Micro-Details ("Juice"):** Rising kitchen/cafe steam puffs, rotating rooftop landmarks (coffee cup, burger, ramen bowl), gently swaying trees, and gliding birds.
-- **Interactive HUD & Cameras:** Floating glassmorphic controls for Morning/Noon/Sunset/Night + 24h scrubber, Clear/Rain weather, Pause/1x/2x speed, Tilt-Shift DepthOfField toggle, opt-in Web Audio ambience, POI inspection cards, and click-to-follow Ride-Along Chase Cam.
+- **Interactive HUD & Cameras:** Floating glassmorphic controls for Morning/Noon/Sunset/Night + 24h scrubber, Clear/Rain weather, Pause/1x/2x speed, opt-in Web Audio ambience, POI inspection cards, and click-to-follow Ride-Along Chase Cam.
 - **Asset-Agnostic Design:** Runs out-of-the-box with zero external assets via procedural low-poly Three.js geometry factories, and hot-swaps compressed CC0 `.glb` files placed in `public/models/` via `src/config/assetManifest.ts`.
 
 ## Performance Engineering

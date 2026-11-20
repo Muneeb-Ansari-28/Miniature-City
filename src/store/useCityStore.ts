@@ -53,7 +53,7 @@ export const useCityStore = create<CityStoreState>((set) => ({
   autoCycleTime: false,
   simSpeed: 1,
   weather: 'clear',
-  tiltShiftEnabled: true,
+  tiltShiftEnabled: false,
   soundEnabled: false,
   showPerfOverlay: true,
   highQuality: true,
