@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useLayoutEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -9,7 +9,6 @@ interface PedestrianRendererProps {
 }
 
 const scratchObj = new THREE.Object3D();
-const scratchColor = new THREE.Color();
 
 const HAIR_CAP_COLORS = [
   '#1e1b18', // Espresso black
@@ -153,50 +152,73 @@ export function PedestrianRenderer({ engine }: PedestrianRendererProps) {
   const headRef = useRef<THREE.InstancedMesh>(null);
   const hairRef = useRef<THREE.InstancedMesh>(null);
 
-  // Initialize individual pedestrian colors
-  useEffect(() => {
-    if (
-      !leftLegRef.current ||
-      !rightLegRef.current ||
-      !torsoRef.current ||
-      !leftArmRef.current ||
-      !rightArmRef.current ||
-      !headRef.current ||
-      !hairRef.current
-    ) {
-      return;
-    }
+  // Precompute instance color Float32Arrays for every mesh
+  const colorBuffers = useMemo(() => {
+    const leg = new Float32Array(count * 3);
+    const torso = new Float32Array(count * 3);
+    const arm = new Float32Array(count * 3);
+    const head = new Float32Array(count * 3);
+    const hair = new Float32Array(count * 3);
+
+    const tempColor = new THREE.Color();
 
     engine.pedestrians.forEach((p, i) => {
-      // Pants on both legs
-      scratchColor.set(p.pantsColor);
-      leftLegRef.current!.setColorAt(i, scratchColor);
-      rightLegRef.current!.setColorAt(i, scratchColor);
+      // Pants color for legs
+      tempColor.set(p.pantsColor);
+      leg[i * 3 + 0] = tempColor.r;
+      leg[i * 3 + 1] = tempColor.g;
+      leg[i * 3 + 2] = tempColor.b;
 
-      // Shirt / jacket on torso and arms
-      scratchColor.set(p.shirtColor);
-      torsoRef.current!.setColorAt(i, scratchColor);
-      leftArmRef.current!.setColorAt(i, scratchColor);
-      rightArmRef.current!.setColorAt(i, scratchColor);
+      // Shirt / jacket color for torso and arms
+      tempColor.set(p.shirtColor);
+      torso[i * 3 + 0] = tempColor.r;
+      torso[i * 3 + 1] = tempColor.g;
+      torso[i * 3 + 2] = tempColor.b;
 
-      // Skin tone on head
-      scratchColor.set(p.skinTone);
-      headRef.current!.setColorAt(i, scratchColor);
+      arm[i * 3 + 0] = tempColor.r;
+      arm[i * 3 + 1] = tempColor.g;
+      arm[i * 3 + 2] = tempColor.b;
 
-      // Varied hair / cap colors
+      // Skin tone for head
+      tempColor.set(p.skinTone);
+      head[i * 3 + 0] = tempColor.r;
+      head[i * 3 + 1] = tempColor.g;
+      head[i * 3 + 2] = tempColor.b;
+
+      // Hair / hat color
       const hairColor = HAIR_CAP_COLORS[i % HAIR_CAP_COLORS.length]!;
-      scratchColor.set(hairColor);
-      hairRef.current!.setColorAt(i, scratchColor);
+      tempColor.set(hairColor);
+      hair[i * 3 + 0] = tempColor.r;
+      hair[i * 3 + 1] = tempColor.g;
+      hair[i * 3 + 2] = tempColor.b;
     });
 
-    if (leftLegRef.current.instanceColor) leftLegRef.current.instanceColor.needsUpdate = true;
-    if (rightLegRef.current.instanceColor) rightLegRef.current.instanceColor.needsUpdate = true;
-    if (torsoRef.current.instanceColor) torsoRef.current.instanceColor.needsUpdate = true;
-    if (leftArmRef.current.instanceColor) leftArmRef.current.instanceColor.needsUpdate = true;
-    if (rightArmRef.current.instanceColor) rightArmRef.current.instanceColor.needsUpdate = true;
-    if (headRef.current.instanceColor) headRef.current.instanceColor.needsUpdate = true;
-    if (hairRef.current.instanceColor) hairRef.current.instanceColor.needsUpdate = true;
-  }, [engine.pedestrians]);
+    return { leg, torso, arm, head, hair };
+  }, [count, engine.pedestrians]);
+
+  // Synchronously initialize instanceColor before the first WebGL frame renders,
+  // ensuring the WebGL shader compiler detects USE_INSTANCING_COLOR.
+  useLayoutEffect(() => {
+    const applyColorBuffer = (
+      mesh: THREE.InstancedMesh | null,
+      colors: Float32Array,
+    ) => {
+      if (!mesh) return;
+      mesh.instanceColor = new THREE.InstancedBufferAttribute(colors, 3);
+      mesh.instanceColor.needsUpdate = true;
+      if (mesh.material) {
+        (mesh.material as THREE.Material).needsUpdate = true;
+      }
+    };
+
+    applyColorBuffer(leftLegRef.current, colorBuffers.leg);
+    applyColorBuffer(rightLegRef.current, colorBuffers.leg);
+    applyColorBuffer(torsoRef.current, colorBuffers.torso);
+    applyColorBuffer(leftArmRef.current, colorBuffers.arm);
+    applyColorBuffer(rightArmRef.current, colorBuffers.arm);
+    applyColorBuffer(headRef.current, colorBuffers.head);
+    applyColorBuffer(hairRef.current, colorBuffers.hair);
+  }, [colorBuffers]);
 
   // Update animated pedestrian limb transforms per frame
   useFrame(() => {

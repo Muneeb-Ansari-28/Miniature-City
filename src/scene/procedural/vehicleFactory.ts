@@ -81,7 +81,7 @@ export function createSedanGeometries(): VehicleGeometryPack {
   // C-pillars / rear window frame (left & right)
   for (const sx of [-0.42, 0.42]) {
     const cPillar = new THREE.BoxGeometry(0.06, 0.36, 0.08);
-    cPin: cPillar.rotateX(0.46);
+    cPillar.rotateX(0.46);
     cPillar.translate(sx, 0.62, -0.34);
     bodyGeos.push(cPillar);
   }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useLayoutEffect, useMemo, useRef } from 'react';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
@@ -128,7 +128,7 @@ export function VehicleRenderer({ engine }: VehicleRendererProps) {
   }, [engine.city.tileSize, engine.trafficLights]);
 
   // Set initial vehicle colors & traffic light poles
-  useEffect(() => {
+  useLayoutEffect(() => {
     VEHICLE_TYPES.forEach((t) => {
       const ref = bodyRefs[t].current;
       const group = typeGroups[t];
@@ -138,6 +138,7 @@ export function VehicleRenderer({ engine }: VehicleRendererProps) {
           ref.setColorAt(k, scratchColor);
         });
         if (ref.instanceColor) ref.instanceColor.needsUpdate = true;
+        if (ref.material) (ref.material as THREE.Material).needsUpdate = true;
       }
     });
 
@@ -166,6 +167,7 @@ export function VehicleRenderer({ engine }: VehicleRendererProps) {
       lensYellowRef.current.instanceMatrix.needsUpdate = true;
       lensGreenRef.current.instanceMatrix.needsUpdate = true;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [typeGroups, polePlacements]);
 
   // Update transforms and lighting in useFrame
