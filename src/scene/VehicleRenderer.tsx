@@ -2,7 +2,9 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
-import { SIDEWALK_HEIGHT, VEHICLE_SPECS } from '@/config/constants';
+import { SIDEWALK_HEIGHT } from '@/config/constants';
+import { buildAllVehicleGeometries } from '@/scene/procedural/vehicleFactory';
+import type { VehicleAgent, VehicleType } from '@/sim/types';
 import type { WorldEngine } from '@/sim/worldEngine';
 import { useCityStore } from '@/store/useCityStore';
 
@@ -12,22 +14,34 @@ interface VehicleRendererProps {
 
 const scratchObj = new THREE.Object3D();
 const scratchColor = new THREE.Color();
+
 const COLOR_RED_ON = new THREE.Color('#ff2424');
 const COLOR_RED_OFF = new THREE.Color('#381212');
 const COLOR_YELLOW_ON = new THREE.Color('#ffbe2e');
 const COLOR_YELLOW_OFF = new THREE.Color('#382e12');
 const COLOR_GREEN_ON = new THREE.Color('#2eff7a');
 const COLOR_GREEN_OFF = new THREE.Color('#10331d');
+
 const COLOR_HEADLIGHT_ON = new THREE.Color('#fff7d6');
 const COLOR_HEADLIGHT_OFF = new THREE.Color('#5e5a52');
 const COLOR_BRAKE_ON = new THREE.Color('#ff2020');
 const COLOR_BRAKE_OFF = new THREE.Color('#401515');
 
+const VEHICLE_TYPES: readonly VehicleType[] = ['sedan', 'taxi', 'compact', 'van', 'bus'];
+
+interface TypeGroup {
+  type: VehicleType;
+  items: { vehicleIndex: number; typeIndex: number; vehicle: VehicleAgent }[];
+}
+
 /**
- * Renders all active vehicles and intersection traffic lights using InstancedMesh
- * for minimal draw calls (< 15 total) and zero per-frame React state updates.
- * Features: 3D wheels, taxi roof caps, active headlights, bright brake lights,
- * additive night light cones, and concept-matching target reticle.
+ * High-detail procedural vehicle renderer:
+ * - Handcrafted procedural 3D models per type (Sedan, Taxi, Compact, Van, Bus)
+ * - Raked windshields, sculpted hoods, stepped trunks, roof spoilers, and cargo boxes
+ * - Shiny chrome bumpers, radiator grilles, and side-view mirrors
+ * - 4 rubber tires with bright silver alloy hubcaps on every vehicle
+ * - Illuminated TAXI roof caps, active headlights, responsive brake lights, and night light cones
+ * - 100% InstancedMesh rendered for optimal performance (< 55 total draw calls)
  */
 export function VehicleRenderer({ engine }: VehicleRendererProps) {
   const followVehicle = useCityStore((s) => s.followVehicle);
@@ -36,15 +50,58 @@ export function VehicleRenderer({ engine }: VehicleRendererProps) {
   const vehicleCount = engine.vehicles.length;
   const lightCount = engine.trafficLights.length;
 
-  const chassisRef = useRef<THREE.InstancedMesh>(null);
-  const cabinRef = useRef<THREE.InstancedMesh>(null);
-  const wheelsRef = useRef<THREE.InstancedMesh>(null);
-  const taxiCapRef = useRef<THREE.InstancedMesh>(null);
+  const geometries = useMemo(() => buildAllVehicleGeometries(), []);
+
+  // Partition vehicles by type
+  const typeGroups = useMemo(() => {
+    const map: Record<VehicleType, TypeGroup> = {
+      sedan: { type: 'sedan', items: [] },
+      taxi: { type: 'taxi', items: [] },
+      compact: { type: 'compact', items: [] },
+      van: { type: 'van', items: [] },
+      bus: { type: 'bus', items: [] },
+    };
+    engine.vehicles.forEach((v, i) => {
+      map[v.type].items.push({
+        vehicleIndex: i,
+        typeIndex: map[v.type].items.length,
+        vehicle: v,
+      });
+    });
+    return map;
+  }, [engine.vehicles]);
+
+  // InstancedMesh refs per vehicle type
+  const bodyRefs = {
+    sedan: useRef<THREE.InstancedMesh>(null),
+    taxi: useRef<THREE.InstancedMesh>(null),
+    compact: useRef<THREE.InstancedMesh>(null),
+    van: useRef<THREE.InstancedMesh>(null),
+    bus: useRef<THREE.InstancedMesh>(null),
+  };
+  const glassRefs = {
+    sedan: useRef<THREE.InstancedMesh>(null),
+    taxi: useRef<THREE.InstancedMesh>(null),
+    compact: useRef<THREE.InstancedMesh>(null),
+    van: useRef<THREE.InstancedMesh>(null),
+    bus: useRef<THREE.InstancedMesh>(null),
+  };
+  const chromeRefs = {
+    sedan: useRef<THREE.InstancedMesh>(null),
+    taxi: useRef<THREE.InstancedMesh>(null),
+    compact: useRef<THREE.InstancedMesh>(null),
+    van: useRef<THREE.InstancedMesh>(null),
+    bus: useRef<THREE.InstancedMesh>(null),
+  };
+
+  const taxiSignRef = useRef<THREE.InstancedMesh>(null);
+  const tiresRef = useRef<THREE.InstancedMesh>(null);
+  const hubcapsRef = useRef<THREE.InstancedMesh>(null);
   const headlightsRef = useRef<THREE.InstancedMesh>(null);
   const brakeLightsRef = useRef<THREE.InstancedMesh>(null);
   const headlightConeRef = useRef<THREE.InstancedMesh>(null);
 
-  // Traffic light poles + signal lenses (2 poles per intersection: NS & EW)
+  // Traffic lights
   const poleRef = useRef<THREE.InstancedMesh>(null);
   const lensRedRef = useRef<THREE.InstancedMesh>(null);
   const lensYellowRef = useRef<THREE.InstancedMesh>(null);
@@ -70,18 +127,19 @@ export function VehicleRenderer({ engine }: VehicleRendererProps) {
     return list;
   }, [engine.city.tileSize, engine.trafficLights]);
 
-  // Initialize static vehicle colors and traffic light poles
+  // Set initial vehicle colors & traffic light poles
   useEffect(() => {
-    if (chassisRef.current && cabinRef.current) {
-      engine.vehicles.forEach((v, i) => {
-        scratchColor.set(v.color);
-        chassisRef.current!.setColorAt(i, scratchColor);
-        scratchColor.set(v.type === 'bus' ? '#f5efe6' : v.color).multiplyScalar(0.92);
-        cabinRef.current!.setColorAt(i, scratchColor);
-      });
-      if (chassisRef.current.instanceColor) chassisRef.current.instanceColor.needsUpdate = true;
-      if (cabinRef.current.instanceColor) cabinRef.current.instanceColor.needsUpdate = true;
-    }
+    VEHICLE_TYPES.forEach((t) => {
+      const ref = bodyRefs[t].current;
+      const group = typeGroups[t];
+      if (ref && group.items.length > 0) {
+        group.items.forEach((item, k) => {
+          scratchColor.set(item.vehicle.color);
+          ref.setColorAt(k, scratchColor);
+        });
+        if (ref.instanceColor) ref.instanceColor.needsUpdate = true;
+      }
+    });
 
     if (poleRef.current && lensRedRef.current && lensYellowRef.current && lensGreenRef.current) {
       polePlacements.forEach((p, i) => {
@@ -108,92 +166,128 @@ export function VehicleRenderer({ engine }: VehicleRendererProps) {
       lensYellowRef.current.instanceMatrix.needsUpdate = true;
       lensGreenRef.current.instanceMatrix.needsUpdate = true;
     }
-  }, [engine.vehicles, polePlacements]);
+  }, [typeGroups, polePlacements]);
 
-  // Update vehicle transforms, wheels, headlights, brake lights, and traffic light lenses directly in useFrame
+  // Update transforms and lighting in useFrame
   useFrame(() => {
     const vehicles = engine.vehicles;
     const isNight = engine.atmosphere.isNight;
 
+    // 1. Update vehicle bodies, glass, and chrome per type
+    VEHICLE_TYPES.forEach((t) => {
+      const bodyMesh = bodyRefs[t].current;
+      const glassMesh = glassRefs[t].current;
+      const chromeMesh = chromeRefs[t].current;
+      const group = typeGroups[t];
+
+      if (bodyMesh && glassMesh && chromeMesh && group.items.length > 0) {
+        for (let k = 0; k < group.items.length; k++) {
+          const v = group.items[k]!.vehicle;
+          scratchObj.position.set(v.position.x, v.position.y, v.position.z);
+          scratchObj.rotation.set(0, v.yaw, 0);
+          scratchObj.scale.set(1, 1, 1);
+          scratchObj.updateMatrix();
+
+          bodyMesh.setMatrixAt(k, scratchObj.matrix);
+          glassMesh.setMatrixAt(k, scratchObj.matrix);
+          chromeMesh.setMatrixAt(k, scratchObj.matrix);
+
+          if (t === 'taxi' && taxiSignRef.current) {
+            taxiSignRef.current.setMatrixAt(k, scratchObj.matrix);
+          }
+        }
+        bodyMesh.instanceMatrix.needsUpdate = true;
+        glassMesh.instanceMatrix.needsUpdate = true;
+        chromeMesh.instanceMatrix.needsUpdate = true;
+        if (t === 'taxi' && taxiSignRef.current) {
+          taxiSignRef.current.instanceMatrix.needsUpdate = true;
+        }
+      }
+    });
+
+    // 2. Update 4 wheels (tires + hubcaps), headlights, brake lights, and cones for each vehicle
     if (
-      chassisRef.current &&
-      cabinRef.current &&
-      wheelsRef.current &&
-      taxiCapRef.current &&
+      tiresRef.current &&
+      hubcapsRef.current &&
       headlightsRef.current &&
       brakeLightsRef.current &&
       headlightConeRef.current
     ) {
       for (let i = 0; i < vehicles.length; i++) {
         const v = vehicles[i]!;
-        const spec = VEHICLE_SPECS[v.type];
         const cosY = Math.cos(v.yaw);
         const sinY = Math.sin(v.yaw);
 
-        // Lower chassis
-        const chassisH = v.type === 'bus' ? spec.height * 0.72 : spec.height * 0.48;
-        scratchObj.position.set(v.position.x, v.position.y + 0.18 + chassisH * 0.5, v.position.z);
-        scratchObj.rotation.set(0, v.yaw, 0);
-        scratchObj.scale.set(spec.width, chassisH, spec.length);
-        scratchObj.updateMatrix();
-        chassisRef.current.setMatrixAt(i, scratchObj.matrix);
+        // Dimensions by type
+        let wdx = 0.48;
+        let wdz = 0.62;
+        let frontLightZ = 1.08;
+        let rearLightZ = -1.08;
+        let frontLightY = 0.36;
+        let rearLightY = 0.42;
+        let lightWidth = 0.72;
 
-        // Upper cabin
-        const cabinH = v.type === 'bus' ? spec.height * 0.32 : spec.height * 0.42;
-        const cabinL = v.type === 'bus' ? spec.length * 0.92 : spec.length * 0.56;
-        scratchObj.position.set(
-          v.position.x,
-          v.position.y + 0.18 + chassisH + cabinH * 0.45,
-          v.position.z,
-        );
-        scratchObj.scale.set(spec.width * 0.88, cabinH, cabinL);
-        scratchObj.updateMatrix();
-        cabinRef.current.setMatrixAt(i, scratchObj.matrix);
+        if (v.type === 'compact') {
+          wdx = 0.44;
+          wdz = 0.52;
+          frontLightZ = 0.90;
+          rearLightZ = -0.90;
+          frontLightY = 0.35;
+          rearLightY = 0.40;
+          lightWidth = 0.66;
+        } else if (v.type === 'van') {
+          wdx = 0.52;
+          wdz = 0.72;
+          frontLightZ = 1.25;
+          rearLightZ = -1.24;
+          frontLightY = 0.42;
+          rearLightY = 0.46;
+          lightWidth = 0.80;
+        } else if (v.type === 'bus') {
+          wdx = 0.56;
+          wdz = 1.05;
+          frontLightZ = 1.68;
+          rearLightZ = -1.68;
+          frontLightY = 0.40;
+          rearLightY = 0.48;
+          lightWidth = 0.90;
+        }
 
         // 4 Wheels
-        const wdx = spec.width * 0.48;
-        const wdz = spec.length * 0.3;
         const wheelOffsets: [number, number][] = [
           [-wdx, wdz],
           [wdx, wdz],
           [-wdx, -wdz],
           [wdx, -wdz],
         ];
+
         for (let w = 0; w < 4; w++) {
           const [ox, oz] = wheelOffsets[w]!;
           const wx = v.position.x + cosY * ox + sinY * oz;
           const wz = v.position.z - sinY * ox + cosY * oz;
-          scratchObj.position.set(wx, v.position.y + 0.16, wz);
-          scratchObj.rotation.set(0, v.yaw, Math.PI / 2);
-          scratchObj.scale.set(0.18, 0.12, 0.18);
-          scratchObj.updateMatrix();
-          wheelsRef.current.setMatrixAt(i * 4 + w, scratchObj.matrix);
-        }
 
-        // TAXI roof sign cap
-        if (v.type === 'taxi') {
-          scratchObj.position.set(
-            v.position.x,
-            v.position.y + 0.18 + chassisH + cabinH + 0.08,
-            v.position.z,
-          );
+          // Tire
+          scratchObj.position.set(wx, v.position.y + 0.18, wz);
           scratchObj.rotation.set(0, v.yaw, 0);
-          scratchObj.scale.set(0.38, 0.14, 0.18);
-        } else {
-          scratchObj.position.set(0, -50, 0);
-          scratchObj.scale.set(0.001, 0.001, 0.001);
-        }
-        scratchObj.updateMatrix();
-        taxiCapRef.current.setMatrixAt(i, scratchObj.matrix);
+          scratchObj.scale.set(1, 1, 1);
+          scratchObj.updateMatrix();
+          tiresRef.current.setMatrixAt(i * 4 + w, scratchObj.matrix);
 
-        // Front headlights (+Z in local car frame)
-        const frontOffset = spec.length * 0.5 + 0.02;
+          // Hubcap: on the outer face of the wheel
+          // If ox > 0 (right wheel), faces +X in local space; if ox < 0, rotated to face -X
+          scratchObj.rotation.set(0, ox > 0 ? v.yaw : v.yaw + Math.PI, 0);
+          scratchObj.updateMatrix();
+          hubcapsRef.current.setMatrixAt(i * 4 + w, scratchObj.matrix);
+        }
+
+        // Front Headlights
         scratchObj.position.set(
-          v.position.x + sinY * frontOffset,
-          v.position.y + 0.36,
-          v.position.z + cosY * frontOffset,
+          v.position.x + sinY * frontLightZ,
+          v.position.y + frontLightY,
+          v.position.z + cosY * frontLightZ,
         );
-        scratchObj.scale.set(spec.width * 0.72, 0.12, 0.08);
+        scratchObj.rotation.set(0, v.yaw, 0);
+        scratchObj.scale.set(lightWidth, 0.10, 0.08);
         scratchObj.updateMatrix();
         headlightsRef.current.setMatrixAt(i, scratchObj.matrix);
         headlightsRef.current.setColorAt(
@@ -201,21 +295,21 @@ export function VehicleRenderer({ engine }: VehicleRendererProps) {
           v.headlightsOn || isNight ? COLOR_HEADLIGHT_ON : COLOR_HEADLIGHT_OFF,
         );
 
-        // Rear brake lights (-Z in local car frame)
-        const rearOffset = -spec.length * 0.5 - 0.02;
+        // Rear Brake Lights
         scratchObj.position.set(
-          v.position.x + sinY * rearOffset,
-          v.position.y + 0.38,
-          v.position.z + cosY * rearOffset,
+          v.position.x + sinY * rearLightZ,
+          v.position.y + rearLightY,
+          v.position.z + cosY * rearLightZ,
         );
-        scratchObj.scale.set(spec.width * 0.72, 0.12, 0.08);
+        scratchObj.rotation.set(0, v.yaw, 0);
+        scratchObj.scale.set(lightWidth, 0.10, 0.08);
         scratchObj.updateMatrix();
         brakeLightsRef.current.setMatrixAt(i, scratchObj.matrix);
         brakeLightsRef.current.setColorAt(i, v.brakeLightsOn ? COLOR_BRAKE_ON : COLOR_BRAKE_OFF);
 
-        // Headlight cone projection
+        // Headlight road cone projection
         if (isNight || v.headlightsOn) {
-          const coneOffset = spec.length * 0.5 + 1.25;
+          const coneOffset = frontLightZ + 1.25;
           scratchObj.position.set(
             v.position.x + sinY * coneOffset,
             v.position.y + 0.22,
@@ -231,10 +325,8 @@ export function VehicleRenderer({ engine }: VehicleRendererProps) {
         headlightConeRef.current.setMatrixAt(i, scratchObj.matrix);
       }
 
-      chassisRef.current.instanceMatrix.needsUpdate = true;
-      cabinRef.current.instanceMatrix.needsUpdate = true;
-      wheelsRef.current.instanceMatrix.needsUpdate = true;
-      taxiCapRef.current.instanceMatrix.needsUpdate = true;
+      tiresRef.current.instanceMatrix.needsUpdate = true;
+      hubcapsRef.current.instanceMatrix.needsUpdate = true;
       headlightsRef.current.instanceMatrix.needsUpdate = true;
       brakeLightsRef.current.instanceMatrix.needsUpdate = true;
       headlightConeRef.current.instanceMatrix.needsUpdate = true;
@@ -242,7 +334,7 @@ export function VehicleRenderer({ engine }: VehicleRendererProps) {
       if (brakeLightsRef.current.instanceColor) brakeLightsRef.current.instanceColor.needsUpdate = true;
     }
 
-    // Update intersection signal lenses
+    // 3. Update intersection signal lenses
     if (lensRedRef.current && lensYellowRef.current && lensGreenRef.current) {
       for (let i = 0; i < polePlacements.length; i++) {
         const p = polePlacements[i]!;
@@ -258,77 +350,111 @@ export function VehicleRenderer({ engine }: VehicleRendererProps) {
     }
   });
 
-  const handleVehicleClick = (e: ThreeEvent<MouseEvent>) => {
+  const handleVehicleTypeClick = (type: VehicleType, e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
     if (e.instanceId === undefined) return;
-    const v = engine.vehicles[e.instanceId];
-    if (v) followVehicle(v.id);
+    const item = typeGroups[type].items[e.instanceId];
+    if (item) followVehicle(item.vehicle.id);
   };
 
   const followedVehicle = followedVehicleId ? engine.getVehicleById(followedVehicleId) : undefined;
 
   return (
     <group name="vehicles-and-signals">
-      {/* Lower vehicle chassis */}
+      {/* 1. Procedural vehicle models grouped by type (Sedan, Taxi, Compact, Van, Bus) */}
+      {VEHICLE_TYPES.map((t) => {
+        const count = typeGroups[t].items.length;
+        if (count === 0) return null;
+        const pack = geometries.packs[t];
+
+        return (
+          <group key={t} name={`vehicles-${t}`}>
+            {/* Sculpted bodywork */}
+            <instancedMesh
+              ref={bodyRefs[t]}
+              args={[pack.body, undefined, count]}
+              castShadow
+              receiveShadow
+              onClick={(e) => handleVehicleTypeClick(t, e)}
+              onPointerOver={() => {
+                document.body.style.cursor = 'pointer';
+              }}
+              onPointerOut={() => {
+                document.body.style.cursor = 'auto';
+              }}
+            >
+              <meshStandardMaterial roughness={0.32} metalness={0.35} />
+            </instancedMesh>
+
+            {/* Tinted glass windows */}
+            <instancedMesh
+              ref={glassRefs[t]}
+              args={[pack.glass, undefined, count]}
+              castShadow
+              onClick={(e) => handleVehicleTypeClick(t, e)}
+            >
+              <meshStandardMaterial color="#1a2536" roughness={0.12} metalness={0.82} />
+            </instancedMesh>
+
+            {/* Polished chrome bumpers, grille, side mirrors */}
+            <instancedMesh ref={chromeRefs[t]} args={[pack.chrome, undefined, count]} castShadow>
+              <meshStandardMaterial color="#e8ecf2" roughness={0.16} metalness={0.92} />
+            </instancedMesh>
+
+            {/* Taxi illuminated roof sign */}
+            {t === 'taxi' && pack.roofSign && (
+              <instancedMesh ref={taxiSignRef} args={[pack.roofSign, undefined, count]}>
+                <meshStandardMaterial
+                  color="#fff2a6"
+                  emissive="#ffca38"
+                  emissiveIntensity={2.8}
+                  toneMapped={false}
+                />
+              </instancedMesh>
+            )}
+          </group>
+        );
+      })}
+
+      {/* 2. Detailed 4 wheels per vehicle (rubber tires + silver hubcaps) */}
       <instancedMesh
-        ref={chassisRef}
-        args={[undefined, undefined, vehicleCount]}
+        ref={tiresRef}
+        args={[geometries.wheel.tire, undefined, Math.max(1, vehicleCount * 4)]}
         castShadow
-        receiveShadow
-        onClick={handleVehicleClick}
-        onPointerOver={() => {
-          document.body.style.cursor = 'pointer';
-        }}
-        onPointerOut={() => {
-          document.body.style.cursor = 'auto';
-        }}
       >
-        <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial roughness={0.4} metalness={0.2} />
+        <meshStandardMaterial color="#1c1d22" roughness={0.92} />
       </instancedMesh>
 
-      {/* Upper cabin & windows */}
       <instancedMesh
-        ref={cabinRef}
-        args={[undefined, undefined, vehicleCount]}
+        ref={hubcapsRef}
+        args={[geometries.wheel.hubcap, undefined, Math.max(1, vehicleCount * 4)]}
         castShadow
-        onClick={handleVehicleClick}
       >
-        <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial roughness={0.35} metalness={0.25} />
+        <meshStandardMaterial color="#dbe2ea" roughness={0.25} metalness={0.88} />
       </instancedMesh>
 
-      {/* 4 Wheels per vehicle */}
-      <instancedMesh ref={wheelsRef} args={[undefined, undefined, vehicleCount * 4]} castShadow>
-        <cylinderGeometry args={[1, 1, 1, 10]} />
-        <meshStandardMaterial color="#222329" roughness={0.88} />
-      </instancedMesh>
-
-      {/* Illuminated TAXI roof caps */}
-      <instancedMesh ref={taxiCapRef} args={[undefined, undefined, vehicleCount]}>
-        <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial
-          color="#fff2a6"
-          emissive="#ffca38"
-          emissiveIntensity={2.5}
-          toneMapped={false}
-        />
-      </instancedMesh>
-
-      {/* Headlights */}
-      <instancedMesh ref={headlightsRef} args={[undefined, undefined, vehicleCount]}>
+      {/* 3. Headlights & Brake Lights */}
+      <instancedMesh
+        ref={headlightsRef}
+        args={[undefined, undefined, Math.max(1, vehicleCount)]}
+      >
         <boxGeometry args={[1, 1, 1]} />
         <meshBasicMaterial toneMapped={false} />
       </instancedMesh>
 
-      {/* Brake lights */}
-      <instancedMesh ref={brakeLightsRef} args={[undefined, undefined, vehicleCount]}>
+      <instancedMesh
+        ref={brakeLightsRef}
+        args={[undefined, undefined, Math.max(1, vehicleCount)]}
+      >
         <boxGeometry args={[1, 1, 1]} />
         <meshBasicMaterial toneMapped={false} />
       </instancedMesh>
 
-      {/* Headlight road cones */}
-      <instancedMesh ref={headlightConeRef} args={[undefined, undefined, vehicleCount]}>
+      {/* 4. Headlight road cones */}
+      <instancedMesh
+        ref={headlightConeRef}
+        args={[undefined, undefined, Math.max(1, vehicleCount)]}
+      >
         <coneGeometry args={[0.85, 2.6, 10, 1, true]} />
         <meshBasicMaterial
           color="#ffe8a3"
@@ -340,7 +466,7 @@ export function VehicleRenderer({ engine }: VehicleRendererProps) {
         />
       </instancedMesh>
 
-      {/* Traffic light poles & emissive signal lenses */}
+      {/* 5. Traffic light poles & signal lenses */}
       <instancedMesh ref={poleRef} args={[undefined, undefined, lightCount * 2]} castShadow>
         <cylinderGeometry args={[0.06, 0.08, 2.1, 6]} />
         <meshStandardMaterial color="#2d303a" roughness={0.65} metalness={0.35} />
@@ -358,7 +484,7 @@ export function VehicleRenderer({ engine }: VehicleRendererProps) {
         <meshBasicMaterial toneMapped={false} />
       </instancedMesh>
 
-      {/* Floating Ride-Along target reticle & badge matching concept art */}
+      {/* 6. Floating Ride-Along target reticle & badge matching concept art */}
       {followedVehicle && (
         <Html
           position={[
