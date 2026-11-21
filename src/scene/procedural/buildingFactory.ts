@@ -467,59 +467,78 @@ export function buildProceduralLotMesh(
       waterFoamGeos.push(makeCyl(0.18, 0.18, 0.02, 8, fx, 0.80, fz));
     }
 
-    // --- D. TWO STREET VENDING MACHINES (Against North Building Wall) ---
-    // Machine 1: Red Coca-Cola / Hot & Cold Drinks (-0.55, -2.32)
-    vendingRedGeos.push(makeBox(0.66, 1.32, 0.44, -0.55, 0.18 + 0.66, -2.32));
-    metalDarkGeos.push(makeBox(0.68, 0.08, 0.46, -0.55, 0.18 + 0.04, -2.32));
-    lanternAmberGeos.push(makeBox(0.58, 0.13, 0.04, -0.55, 0.18 + 1.22, -2.09));
-    vendingDisplayGeos.push(makeBox(0.56, 0.54, 0.04, -0.55, 0.18 + 0.82, -2.09));
+    // --- D. TWO STREET VENDING MACHINES (Attached to North Building Wall) ---
+    const vmZ = -3.50; // Aligns flush against the Commercial Tower wall plinth at z = -3.725
+    const binZ = -3.50;
+
+    // Concrete equipment foundation pad extending right to the building plinth
+    concreteDarkGeos.push(makeBox(2.26, 0.05, 0.60, 0.14, 0.18 + 0.025, vmZ));
+
+    // Steel wall anchor brackets securing top rear of machines directly into the building wall
+    metalDarkGeos.push(
+      makeBox(0.14, 0.04, 0.10, -0.55, 0.18 + 1.30, vmZ - 0.20),
+      makeBox(0.14, 0.04, 0.10, 0.25, 0.18 + 1.30, vmZ - 0.20),
+    );
+
+    // Weatherproof electrical utility conduit & wall junction box on building facade
+    metalDarkGeos.push(
+      makeBox(0.12, 0.16, 0.06, -0.96, 0.18 + 1.55, -3.72),
+      makeCyl(0.012, 0.012, 0.65, 6, -0.96, 0.18 + 1.25, -3.71),
+      makeCyl(0.010, 0.010, 0.18, 6, -0.90, 0.18 + 0.95, -3.65, 0, Math.PI / 2),
+    );
+
+    // Machine 1: Red Coca-Cola / Hot & Cold Drinks (-0.55, vmZ)
+    vendingRedGeos.push(makeBox(0.66, 1.32, 0.44, -0.55, 0.18 + 0.66, vmZ));
+    metalDarkGeos.push(makeBox(0.68, 0.08, 0.46, -0.55, 0.18 + 0.04, vmZ));
+    lanternAmberGeos.push(makeBox(0.58, 0.13, 0.04, -0.55, 0.18 + 1.22, vmZ + 0.23));
+    vendingDisplayGeos.push(makeBox(0.56, 0.54, 0.04, -0.55, 0.18 + 0.82, vmZ + 0.23));
 
     // Miniature drink cans on 3 display shelves
     for (let c = 0; c < 5; c++) {
       const cx = -0.55 + (c - 2) * 0.105;
-      vendingRedGeos.push(makeCyl(0.025, 0.025, 0.08, 6, cx, 0.18 + 0.98, -2.07));
-      metalDarkGeos.push(makeCyl(0.025, 0.025, 0.08, 6, cx, 0.18 + 0.82, -2.07));
-      grassMatGeos.push(makeCyl(0.022, 0.022, 0.09, 6, cx, 0.18 + 0.66, -2.07));
+      vendingRedGeos.push(makeCyl(0.025, 0.025, 0.08, 6, cx, 0.18 + 0.98, vmZ + 0.25));
+      metalDarkGeos.push(makeCyl(0.025, 0.025, 0.08, 6, cx, 0.18 + 0.82, vmZ + 0.25));
+      grassMatGeos.push(makeCyl(0.022, 0.022, 0.09, 6, cx, 0.18 + 0.66, vmZ + 0.25));
     }
     for (let r = 0; r < 3; r++) {
       for (let c = 0; c < 5; c++) {
         const bx = -0.55 + (c - 2) * 0.105;
         const by = 0.18 + 0.58 + r * 0.16;
-        lanternAmberGeos.push(makeBox(0.035, 0.02, 0.02, bx, by, -2.08));
+        lanternAmberGeos.push(makeBox(0.035, 0.02, 0.02, bx, by, vmZ + 0.24));
       }
     }
-    metalDarkGeos.push(makeBox(0.06, 0.14, 0.02, -0.32, 0.18 + 0.54, -2.08));
-    metalDarkGeos.push(makeBox(0.48, 0.18, 0.03, -0.55, 0.18 + 0.24, -2.08));
-    concreteTrimGeos.push(makeBox(0.38, 0.03, 0.03, -0.55, 0.18 + 0.28, -2.06));
+    metalDarkGeos.push(makeBox(0.06, 0.14, 0.02, -0.32, 0.18 + 0.54, vmZ + 0.24));
+    metalDarkGeos.push(makeBox(0.48, 0.18, 0.03, -0.55, 0.18 + 0.24, vmZ + 0.24));
+    concreteTrimGeos.push(makeBox(0.38, 0.03, 0.03, -0.55, 0.18 + 0.28, vmZ + 0.26));
 
-    // Machine 2: Blue Cold Energy & Sports Drinks (+0.25, -2.32)
-    vendingBlueGeos.push(makeBox(0.66, 1.32, 0.44, 0.25, 0.18 + 0.66, -2.32));
-    metalDarkGeos.push(makeBox(0.68, 0.08, 0.46, 0.25, 0.18 + 0.04, -2.32));
-    lanternAmberGeos.push(makeBox(0.58, 0.13, 0.04, 0.25, 0.18 + 1.22, -2.09));
-    vendingDisplayGeos.push(makeBox(0.56, 0.54, 0.04, 0.25, 0.18 + 0.82, -2.09));
+    // Machine 2: Blue Cold Energy & Sports Drinks (+0.25, vmZ)
+    vendingBlueGeos.push(makeBox(0.66, 1.32, 0.44, 0.25, 0.18 + 0.66, vmZ));
+    metalDarkGeos.push(makeBox(0.68, 0.08, 0.46, 0.25, 0.18 + 0.04, vmZ));
+    lanternAmberGeos.push(makeBox(0.58, 0.13, 0.04, 0.25, 0.18 + 1.22, vmZ + 0.23));
+    vendingDisplayGeos.push(makeBox(0.56, 0.54, 0.04, 0.25, 0.18 + 0.82, vmZ + 0.23));
 
     for (let c = 0; c < 5; c++) {
       const cx = 0.25 + (c - 2) * 0.105;
-      vendingBlueGeos.push(makeCyl(0.025, 0.025, 0.08, 6, cx, 0.18 + 0.98, -2.07));
-      waterFlowGeos.push(makeCyl(0.023, 0.023, 0.09, 6, cx, 0.18 + 0.82, -2.07));
-      vendingDisplayGeos.push(makeCyl(0.024, 0.024, 0.08, 6, cx, 0.18 + 0.66, -2.07));
+      vendingBlueGeos.push(makeCyl(0.025, 0.025, 0.08, 6, cx, 0.18 + 0.98, vmZ + 0.25));
+      waterFlowGeos.push(makeCyl(0.023, 0.023, 0.09, 6, cx, 0.18 + 0.82, vmZ + 0.25));
+      vendingDisplayGeos.push(makeCyl(0.024, 0.024, 0.08, 6, cx, 0.18 + 0.66, vmZ + 0.25));
     }
     for (let r = 0; r < 3; r++) {
       for (let c = 0; c < 5; c++) {
         const bx = 0.25 + (c - 2) * 0.105;
         const by = 0.18 + 0.58 + r * 0.16;
-        lanternAmberGeos.push(makeBox(0.035, 0.02, 0.02, bx, by, -2.08));
+        lanternAmberGeos.push(makeBox(0.035, 0.02, 0.02, bx, by, vmZ + 0.24));
       }
     }
-    metalDarkGeos.push(makeBox(0.06, 0.14, 0.02, 0.48, 0.18 + 0.54, -2.08));
-    metalDarkGeos.push(makeBox(0.48, 0.18, 0.03, 0.25, 0.18 + 0.24, -2.08));
-    concreteTrimGeos.push(makeBox(0.38, 0.03, 0.03, 0.25, 0.18 + 0.28, -2.06));
+    metalDarkGeos.push(makeBox(0.06, 0.14, 0.02, 0.48, 0.18 + 0.54, vmZ + 0.24));
+    metalDarkGeos.push(makeBox(0.48, 0.18, 0.03, 0.25, 0.18 + 0.24, vmZ + 0.24));
+    concreteTrimGeos.push(makeBox(0.38, 0.03, 0.03, 0.25, 0.18 + 0.28, vmZ + 0.26));
 
-    // Can & Bottle Recycling Receptacle (+0.82, -2.32)
-    grassMatGeos.push(makeBox(0.28, 0.64, 0.32, 0.82, 0.18 + 0.32, -2.32));
-    metalDarkGeos.push(makeBox(0.30, 0.06, 0.34, 0.82, 0.18 + 0.65, -2.32));
-    metalDarkGeos.push(makeCyl(0.045, 0.045, 0.02, 8, 0.76, 0.18 + 0.68, -2.32));
-    metalDarkGeos.push(makeCyl(0.045, 0.045, 0.02, 8, 0.88, 0.18 + 0.68, -2.32));
+    // Can & Bottle Recycling Receptacle (+0.82, binZ)
+    grassMatGeos.push(makeBox(0.28, 0.64, 0.40, 0.82, 0.18 + 0.32, binZ));
+    metalDarkGeos.push(makeBox(0.30, 0.06, 0.42, 0.82, 0.18 + 0.65, binZ));
+    metalDarkGeos.push(makeCyl(0.045, 0.045, 0.02, 8, 0.76, 0.18 + 0.68, binZ + 0.06));
+    metalDarkGeos.push(makeCyl(0.045, 0.045, 0.02, 8, 0.88, 0.18 + 0.68, binZ - 0.06));
 
     // --- E. DETAILED GOURMET BURGER KIOSK (-1.65, 1.35) ---
     const kx = -1.65;
