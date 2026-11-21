@@ -46,8 +46,18 @@ export function CameraRig({ engine }: CameraRigProps) {
     if (!selectedPoiId) return;
     const poi = engine.getPoiById(selectedPoiId);
     if (!poi) return;
-    transitionGoalTarget.current.set(poi.worldPos.x, 1.4, poi.worldPos.z);
-    transitionGoalPos.current.set(poi.worldPos.x + 11.5, 9.8, poi.worldPos.z + 12.5);
+
+    if (poi.id === 'central-pocket-park') {
+      // Elevated unobstructed view framing both West Playground & East Botanical Garden
+      transitionGoalTarget.current.set(poi.worldPos.x + 3.0, 1.2, poi.worldPos.z);
+      transitionGoalPos.current.set(poi.worldPos.x + 3.0, 17.5, poi.worldPos.z + 16.5);
+    } else if (poi.id === 'harbor-plaza') {
+      transitionGoalTarget.current.set(poi.worldPos.x, 1.4, poi.worldPos.z);
+      transitionGoalPos.current.set(poi.worldPos.x + 8.5, 12.0, poi.worldPos.z + 11.0);
+    } else {
+      transitionGoalTarget.current.set(poi.worldPos.x, 1.4, poi.worldPos.z);
+      transitionGoalPos.current.set(poi.worldPos.x + 11.5, 9.8, poi.worldPos.z + 12.5);
+    }
     isTransitioningRef.current = true;
   }, [selectedPoiId, engine]);
 

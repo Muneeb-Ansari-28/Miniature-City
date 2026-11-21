@@ -353,6 +353,10 @@ export function stepPedestrians(
             toNode.position.x - fromNode.position.x,
             toNode.position.z - fromNode.position.z,
           );
+          // Keep waiting pedestrians safely on the sidewalk behind the curb
+          p.position.x = fromNode.position.x;
+          p.position.z = fromNode.position.z;
+          p.edgeProgress = 0;
           continue;
         }
       }
