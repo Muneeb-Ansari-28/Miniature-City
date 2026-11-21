@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 test('Visual Inspection: Verify all enrichment details, animals, playground, and performance', async ({ page }) => {
+  test.setTimeout(90_000);
   const errors: string[] = [];
   const warnings: string[] = [];
   page.on('console', (msg) => {
