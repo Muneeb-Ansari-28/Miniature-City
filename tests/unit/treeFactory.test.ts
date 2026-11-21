@@ -44,6 +44,12 @@ describe('treeFactory: Diverse Multi-Species Botanical Trees', () => {
     const pineWidth = pineBox.max.x - pineBox.min.x;
     expect(pineHeight / pineWidth).toBeGreaterThan(0.9);
 
+    // Sakura trunk must reach into canopy (max.y >= 1.9) with continuous coverage
+    trees.sakura.trunkGeometry.computeBoundingBox();
+    const sakuraTrunkBox = trees.sakura.trunkGeometry.boundingBox!;
+    expect(sakuraTrunkBox.max.y).toBeGreaterThanOrEqual(1.9);
+    expect(sakuraTrunkBox.min.y).toBeLessThanOrEqual(0.1);
+
     // Sakura should be spreading / wide (horizontal blossoming clouds)
     const sakuraBox = new THREE.Box3().setFromBufferAttribute(
       trees.sakura.canopyGeometry.getAttribute('position') as THREE.BufferAttribute,

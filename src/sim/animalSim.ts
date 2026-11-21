@@ -28,18 +28,19 @@ export function createAnimalRoster(
   const animals: AnimalAgent[] = [];
   let idCounter = 1;
 
-  // 1. Dogs (4 total: 2 leashed walking dogs + 2 resting/sitting companion dogs)
+  // 1. Dogs (4 total: 3 active walking leashed dogs + 1 resting patio dog)
   const walkingPeds = pedestrians.filter((p) => p.state === 'walking');
   const dog1Owner = walkingPeds[0] ?? pedestrians[0];
-  const dog2Owner = walkingPeds[3] ?? pedestrians[1];
+  const dog2Owner = walkingPeds[2] ?? pedestrians[1];
+  const dog3Owner = walkingPeds[4] ?? pedestrians[2];
 
   if (dog1Owner) {
     animals.push({
       id: `animal_${idCounter++}`,
       type: 'dog',
       position: {
-        x: dog1Owner.position.x - 0.45,
-        y: SIDEWALK_HEIGHT,
+        x: dog1Owner.position.x - 0.35,
+        y: dog1Owner.position.y,
         z: dog1Owner.position.z - 0.25,
       },
       rotationY: dog1Owner.yaw,
@@ -47,7 +48,7 @@ export function createAnimalRoster(
       color: '#d48c46', // Shiba Inu orange/tan
       state: 'walking',
       pedestrianOwnerId: dog1Owner.id,
-      tetherOffset: { dx: -0.4, dz: -0.3 },
+      tetherOffset: { dx: -0.32, dz: -0.3 },
     });
   }
 
@@ -56,36 +57,43 @@ export function createAnimalRoster(
       id: `animal_${idCounter++}`,
       type: 'dog',
       position: {
-        x: dog2Owner.position.x + 0.35,
-        y: SIDEWALK_HEIGHT,
-        z: dog2Owner.position.z - 0.4,
+        x: dog2Owner.position.x + 0.3,
+        y: dog2Owner.position.y,
+        z: dog2Owner.position.z - 0.35,
       },
       rotationY: dog2Owner.yaw,
-      scale: 0.95,
+      scale: 0.92,
       color: '#e3a857', // Golden Retriever warm gold
       state: 'walking',
       pedestrianOwnerId: dog2Owner.id,
-      tetherOffset: { dx: 0.35, dz: -0.35 },
+      tetherOffset: { dx: 0.3, dz: -0.3 },
     });
   }
 
-  // Resting dog 3: Sitting companion by Sunset Cafe & Grill patio
-  animals.push({
-    id: `animal_${idCounter++}`,
-    type: 'dog',
-    position: { x: 7.2, y: SIDEWALK_HEIGHT, z: -1.2 },
-    rotationY: -Math.PI * 0.4,
-    scale: 0.9,
-    color: '#3b2f2f', // Dark chocolate / black lab
-    state: 'idle',
-  });
+  if (dog3Owner) {
+    animals.push({
+      id: `animal_${idCounter++}`,
+      type: 'dog',
+      position: {
+        x: dog3Owner.position.x - 0.28,
+        y: dog3Owner.position.y,
+        z: dog3Owner.position.z - 0.3,
+      },
+      rotationY: dog3Owner.yaw,
+      scale: 0.8,
+      color: '#5a3d28', // Chocolate Lab
+      state: 'walking',
+      pedestrianOwnerId: dog3Owner.id,
+      tetherOffset: { dx: -0.28, dz: -0.28 },
+    });
+  }
 
-  // Resting dog 4: Friendly dog sitting on park lawn in Botanical Garden
+  // Resting dog 4: Calm companion resting on cafe patio sidewalk
   animals.push({
     id: `animal_${idCounter++}`,
     type: 'dog',
-    position: { x: 6.8, y: SIDEWALK_HEIGHT + 0.16, z: 6.8 },
-    rotationY: Math.PI * 0.75,
+    position: { x: 7.2, y: SIDEWALK_HEIGHT + 0.02, z: -1.2 },
+    rotationY: -Math.PI * 0.4,
     scale: 0.88,
     color: '#d48c46', // Shiba Inu
     state: 'idle',
@@ -182,11 +190,12 @@ export function createAnimalRoster(
     });
   }
 
-  // 4. Bird Nests (4 total: snug in tree branch boughs and building eaves)
+  // 4. Bird Nests (4 total: snug in real tree branch forks and rooftop gravel beds, never hanging in mid-air)
   animals.push({
     id: `animal_${idCounter++}`,
     type: 'bird_nest',
-    position: { x: 0 - 1.9, y: SIDEWALK_HEIGHT + 1.48, z: 6.0 - 1.85 }, // In West Oak Tree
+    // In West Oak Tree branch fork
+    position: { x: -2.12, y: SIDEWALK_HEIGHT + 0.14 + 1.32, z: 4.2 },
     rotationY: 0.4,
     scale: 0.5,
     color: '#8b6f47',
@@ -197,7 +206,8 @@ export function createAnimalRoster(
   animals.push({
     id: `animal_${idCounter++}`,
     type: 'bird_nest',
-    position: { x: 6.0 - 1.85, y: SIDEWALK_HEIGHT + 1.55, z: 6.0 - 1.75 }, // In East Sakura Tree
+    // In East Sakura Tree branch fork under floral canopy
+    position: { x: 3.9, y: SIDEWALK_HEIGHT + 0.14 + 1.38, z: 4.35 },
     rotationY: -0.6,
     scale: 0.5,
     color: '#7a5a3a',
@@ -208,20 +218,22 @@ export function createAnimalRoster(
   animals.push({
     id: `animal_${idCounter++}`,
     type: 'bird_nest',
-    position: { x: -6.0 + 1.8, y: 3.55, z: 6.0 + 1.8 }, // Eaves of Sakura Ramen Corner
-    rotationY: 1.2,
+    // On rooftop gravel corner of Apartment Balcony (height: 6.4)
+    position: { x: -10.2, y: SIDEWALK_HEIGHT + 6.4 + 0.08, z: -10.3 },
+    rotationY: 0.8,
     scale: 0.48,
     color: '#9c7b52',
     state: 'idle',
-    nestEggs: 2,
+    nestEggs: 3,
   });
 
   animals.push({
     id: `animal_${idCounter++}`,
     type: 'bird_nest',
-    position: { x: 5.6, y: 4.88, z: -5.8 }, // Utility pole crossarm near Plaza
-    rotationY: 0,
-    scale: 0.46,
+    // On rooftop gravel corner of Commercial Tower (height: 7.4)
+    position: { x: 4.4, y: SIDEWALK_HEIGHT + 7.4 + 0.08, z: -10.4 },
+    rotationY: -0.5,
+    scale: 0.48,
     color: '#826544',
     state: 'idle',
     nestEggs: 3,
@@ -243,10 +255,19 @@ export function updateAnimalSim(
   for (const animal of animals) {
     // 1. Leashed dogs follow their assigned pedestrian
     if (animal.type === 'dog' && animal.pedestrianOwnerId) {
-      const owner = pedMap.get(animal.pedestrianOwnerId);
+      let owner = pedMap.get(animal.pedestrianOwnerId);
+      // If owner paused or sat down, re-tether to a currently walking pedestrian so dogs are always actively walking
+      if (!owner || owner.state !== 'walking') {
+        const nextWalker = pedestrians.find((p) => p.state === 'walking' && p.id !== animal.pedestrianOwnerId);
+        if (nextWalker) {
+          animal.pedestrianOwnerId = nextWalker.id;
+          owner = nextWalker;
+        }
+      }
+
       if (owner) {
         // Calculate tether goal position behind and slightly to the side of owner
-        const backDist = 0.55;
+        const backDist = 0.42;
         const sideDist = animal.tetherOffset?.dx ?? -0.25;
         const cosH = Math.cos(owner.yaw);
         const sinH = Math.sin(owner.yaw);

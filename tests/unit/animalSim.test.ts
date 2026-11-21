@@ -30,9 +30,16 @@ describe('animalSim: Urban Wildlife and Pet Simulation', () => {
     const leashedDogs = dogs.filter((d) => d.pedestrianOwnerId !== undefined);
     expect(leashedDogs.length).toBeGreaterThanOrEqual(1);
 
-    // Bird nests should have egg counts
+    // Bird nests should have egg counts and be securely perched
     for (const nest of nests) {
       expect(nest.nestEggs).toBeGreaterThanOrEqual(2);
+      expect(nest.position.y).toBeGreaterThanOrEqual(1.4); // Either in tree forks or on building roofs
+    }
+
+    // No animal should ever be spawned at the origin (0, 0, 0) in the middle of the road
+    for (const animal of animals) {
+      const distToOrigin = Math.hypot(animal.position.x, animal.position.z);
+      expect(distToOrigin).toBeGreaterThan(0.5);
     }
   });
 

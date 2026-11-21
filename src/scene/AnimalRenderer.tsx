@@ -167,31 +167,51 @@ function createPigeonGeometry(): THREE.BufferGeometry {
 /**
  * Builds a cozy woven twig bird nest containing 3 speckled eggs.
  */
+/**
+ * Helper to assign RGB vertex colors to a sub-geometry prior to merging.
+ */
+function applyVertexColor(geo: THREE.BufferGeometry, hex: string): THREE.BufferGeometry {
+  const color = new THREE.Color(hex);
+  const count = geo.getAttribute('position').count;
+  const colors = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    colors[i * 3] = color.r;
+    colors[i * 3 + 1] = color.g;
+    colors[i * 3 + 2] = color.b;
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  return geo;
+}
+
+/**
+ * Builds a cozy woven bird nest with contrasting Robin's egg blue & speckled cream eggs inside.
+ */
 function createBirdNestGeometry(): THREE.BufferGeometry {
   const geos: THREE.BufferGeometry[] = [];
 
-  // Woven twig outer bowl
-  const bowl = new THREE.TorusGeometry(0.18, 0.07, 6, 9);
+  // Woven twig outer bowl in bark brown
+  const bowl = new THREE.TorusGeometry(0.19, 0.075, 6, 10);
   bowl.rotateX(Math.PI * 0.5);
-  bowl.translate(0, 0.07, 0);
-  geos.push(ensureIndexed(bowl));
+  bowl.translate(0, 0.075, 0);
+  geos.push(applyVertexColor(ensureIndexed(bowl), '#543d2b'));
 
   // Nest base floor
-  const floor = new THREE.CylinderGeometry(0.14, 0.14, 0.04, 8);
+  const floor = new THREE.CylinderGeometry(0.15, 0.15, 0.04, 8);
   floor.translate(0, 0.02, 0);
-  geos.push(ensureIndexed(floor));
+  geos.push(applyVertexColor(ensureIndexed(floor), '#3d2b1d'));
 
-  // 3 Tiny speckled eggs inside
-  const eggCoords = [
-    [-0.05, 0.06, -0.03],
-    [0.05, 0.06, -0.02],
-    [0.0, 0.06, 0.05],
+  // 3 distinct pastel bird eggs nestled snugly inside
+  const eggCoords: [number, number, number, string][] = [
+    [-0.055, 0.08, -0.035, '#88d8d4'], // Robin's egg turquoise
+    [0.055, 0.08, -0.025, '#f4eee1'], // Speckled porcelain cream
+    [0.005, 0.085, 0.055, '#a2e4e0'], // Soft pastel cyan
   ];
-  for (const [ex, ey, ez] of eggCoords) {
-    const egg = new THREE.SphereGeometry(0.04, 6, 6);
-    egg.scale(0.85, 1.15, 0.85);
-    egg.translate(ex!, ey!, ez!);
-    geos.push(ensureIndexed(egg));
+
+  for (const [ex, ey, ez, col] of eggCoords) {
+    const egg = new THREE.SphereGeometry(0.052, 7, 7);
+    egg.scale(0.9, 1.25, 0.9);
+    egg.translate(ex, ey, ez);
+    geos.push(applyVertexColor(ensureIndexed(egg), col));
   }
 
   return mergeGeometries(geos, false)!;
@@ -230,7 +250,6 @@ export function AnimalRenderer({ city, engine }: AnimalRendererProps) {
     const dogs = animals.filter((a) => a.type === 'dog');
     const cats = animals.filter((a) => a.type === 'cat');
     const pigeons = animals.filter((a) => a.type === 'pigeon');
-    const nests = animals.filter((a) => a.type === 'bird_nest');
 
     if (dogMeshRef.current) {
       dogs.forEach((d, i) => {
@@ -255,14 +274,7 @@ export function AnimalRenderer({ city, engine }: AnimalRendererProps) {
       });
       if (pigeonMeshRef.current.instanceColor) pigeonMeshRef.current.instanceColor.needsUpdate = true;
     }
-
-    if (nestMeshRef.current) {
-      nests.forEach((n, i) => {
-        scratchColor.set(n.color);
-        nestMeshRef.current!.setColorAt(i, scratchColor);
-      });
-      if (nestMeshRef.current.instanceColor) nestMeshRef.current.instanceColor.needsUpdate = true;
-    }
+    // Nests use embedded geometry vertex colors (twig brown bowl + pastel blue/cream eggs)
   }, []);
 
   useFrame(({ clock }, delta) => {
@@ -283,8 +295,8 @@ export function AnimalRenderer({ city, engine }: AnimalRendererProps) {
     if (dogMeshRef.current) {
       dogs.forEach((d, i) => {
         const isWalking = d.state === 'walking';
-        const bounce = isWalking ? Math.abs(Math.sin(t * 8 + i)) * 0.035 : Math.sin(t * 2 + i) * 0.008;
-        const roll = isWalking ? Math.sin(t * 8 + i) * 0.04 : 0;
+        const bounce = isWalking ? Math.abs(Math.sin(t * 9 + i * 2)) * 0.045 : Math.sin(t * 2 + i) * 0.008;
+        const roll = isWalking ? Math.sin(t * 9 + i * 2) * 0.06 : 0;
 
         scratchObj.position.set(d.position.x, d.position.y + bounce, d.position.z);
         scratchObj.rotation.set(0, d.rotationY, roll);
@@ -292,6 +304,13 @@ export function AnimalRenderer({ city, engine }: AnimalRendererProps) {
         scratchObj.updateMatrix();
         dogMeshRef.current!.setMatrixAt(i, scratchObj.matrix);
       });
+      // Zero out unused instances so ghost white dogs never sit at (0, 0, 0)
+      for (let i = dogs.length; i < 6; i++) {
+        scratchObj.position.set(0, -999, 0);
+        scratchObj.scale.set(0, 0, 0);
+        scratchObj.updateMatrix();
+        dogMeshRef.current!.setMatrixAt(i, scratchObj.matrix);
+      }
       dogMeshRef.current.instanceMatrix.needsUpdate = true;
     }
 
@@ -305,6 +324,12 @@ export function AnimalRenderer({ city, engine }: AnimalRendererProps) {
         scratchObj.updateMatrix();
         catMeshRef.current!.setMatrixAt(i, scratchObj.matrix);
       });
+      for (let i = cats.length; i < 6; i++) {
+        scratchObj.position.set(0, -999, 0);
+        scratchObj.scale.set(0, 0, 0);
+        scratchObj.updateMatrix();
+        catMeshRef.current!.setMatrixAt(i, scratchObj.matrix);
+      }
       catMeshRef.current.instanceMatrix.needsUpdate = true;
     }
 
@@ -321,6 +346,12 @@ export function AnimalRenderer({ city, engine }: AnimalRendererProps) {
         scratchObj.updateMatrix();
         pigeonMeshRef.current!.setMatrixAt(i, scratchObj.matrix);
       });
+      for (let i = pigeons.length; i < 12; i++) {
+        scratchObj.position.set(0, -999, 0);
+        scratchObj.scale.set(0, 0, 0);
+        scratchObj.updateMatrix();
+        pigeonMeshRef.current!.setMatrixAt(i, scratchObj.matrix);
+      }
       pigeonMeshRef.current.instanceMatrix.needsUpdate = true;
     }
 
@@ -333,6 +364,12 @@ export function AnimalRenderer({ city, engine }: AnimalRendererProps) {
         scratchObj.updateMatrix();
         nestMeshRef.current!.setMatrixAt(i, scratchObj.matrix);
       });
+      for (let i = nests.length; i < 6; i++) {
+        scratchObj.position.set(0, -999, 0);
+        scratchObj.scale.set(0, 0, 0);
+        scratchObj.updateMatrix();
+        nestMeshRef.current!.setMatrixAt(i, scratchObj.matrix);
+      }
       nestMeshRef.current.instanceMatrix.needsUpdate = true;
     }
   });
@@ -354,9 +391,9 @@ export function AnimalRenderer({ city, engine }: AnimalRendererProps) {
         <meshStandardMaterial roughness={0.7} />
       </instancedMesh>
 
-      {/* Low-poly Bird Nests */}
+      {/* Low-poly Bird Nests with colorful eggs */}
       <instancedMesh ref={nestMeshRef} args={[nestGeo, undefined, 6]} castShadow receiveShadow>
-        <meshStandardMaterial roughness={0.9} />
+        <meshStandardMaterial vertexColors roughness={0.7} />
       </instancedMesh>
     </group>
   );

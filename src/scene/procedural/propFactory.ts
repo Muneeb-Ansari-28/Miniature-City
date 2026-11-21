@@ -174,38 +174,39 @@ export function computeCityPropLayout(city: GeneratedCity): CityPropLayout {
     }
 
     // D. INTERSECTION EDGES (Streetlamps, hydrants, bollards, traffic cones)
+    // Placed strictly on the raised sidewalk curb corners of adjacent lots (curbOffset = half + 0.35)
     if (lot.type === 'road_intersection') {
-      const cornerOffset = half - 0.42;
+      const curbOffset = half + 0.35;
 
       lamps.push(
         {
-          position: { x: x - cornerOffset, y: SIDEWALK_HEIGHT, z: z - cornerOffset },
+          position: { x: x - curbOffset, y: SIDEWALK_HEIGHT, z: z - curbOffset },
           rotationY: Math.PI / 4,
           scale: 1,
         },
         {
-          position: { x: x + cornerOffset, y: SIDEWALK_HEIGHT, z: z + cornerOffset },
+          position: { x: x + curbOffset, y: SIDEWALK_HEIGHT, z: z + curbOffset },
           rotationY: -Math.PI * 0.75,
           scale: 1,
         },
       );
 
       bollards.push(
-        { position: { x: x + cornerOffset, y: SIDEWALK_HEIGHT, z: z - cornerOffset }, rotationY: 0, scale: 1 },
-        { position: { x: x - cornerOffset, y: SIDEWALK_HEIGHT, z: z + cornerOffset }, rotationY: 0, scale: 1 },
+        { position: { x: x + curbOffset, y: SIDEWALK_HEIGHT, z: z - curbOffset }, rotationY: 0, scale: 1 },
+        { position: { x: x - curbOffset, y: SIDEWALK_HEIGHT, z: z + curbOffset }, rotationY: 0, scale: 1 },
       );
 
-      // Hydrant at one corner of every intersection
+      // Hydrant at the sidewalk curb corner overlooking crosswalk
       hydrants.push({
-        position: { x: x + cornerOffset - 0.35, y: SIDEWALK_HEIGHT, z: z - cornerOffset + 0.35 },
+        position: { x: x + curbOffset + 0.1, y: SIDEWALK_HEIGHT, z: z - curbOffset + 0.35 },
         rotationY: Math.PI / 4,
         scale: 1,
       });
 
       // Traffic cones near crosswalk edges
       trafficCones.push(
-        { position: { x: x - cornerOffset + 0.25, y: 0.04, z: z - cornerOffset + 1.2 }, rotationY: 0, scale: 1 },
-        { position: { x: x - cornerOffset + 0.25, y: 0.04, z: z - cornerOffset + 1.6 }, rotationY: 0.5, scale: 1 },
+        { position: { x: x - curbOffset + 0.1, y: 0.04, z: z - half + 0.7 }, rotationY: 0, scale: 1 },
+        { position: { x: x - curbOffset + 0.1, y: 0.04, z: z - half + 1.1 }, rotationY: 0.5, scale: 1 },
       );
     }
   }
@@ -297,46 +298,55 @@ export function computeCityPropLayout(city: GeneratedCity): CityPropLayout {
     }
   }
 
-  // 3. Street newspaper vending boxes on sidewalk corners
+  // 3. Street newspaper vending boxes and mail post on sidewalk corners (firmly on sidewalk slabs)
   newspaperBoxes.push(
     {
-      position: { x: -2.15, y: SIDEWALK_HEIGHT, z: 2.15 },
+      position: { x: -3.35, y: SIDEWALK_HEIGHT, z: 3.45 },
       rotationY: Math.PI * 0.25,
       scale: 0.9,
-      color: '#e63946', // Red box
+      color: '#e63946', // Classic Red mail/news post box on Sakura Ramen sidewalk
     },
     {
-      position: { x: 2.15, y: SIDEWALK_HEIGHT, z: -2.15 },
+      position: { x: 3.45, y: SIDEWALK_HEIGHT, z: -3.35 },
       rotationY: -Math.PI * 0.75,
       scale: 0.9,
-      color: '#1d3557', // Navy box
+      color: '#1d3557', // Navy box on Harbor Plaza sidewalk
     },
     {
-      position: { x: -2.15, y: SIDEWALK_HEIGHT, z: -2.15 },
+      position: { x: -3.35, y: SIDEWALK_HEIGHT, z: -3.45 },
       rotationY: -Math.PI * 0.25,
       scale: 0.9,
-      color: '#e9c46a', // Yellow box
+      color: '#e9c46a', // Yellow box near Bistro Lumiere sidewalk
     },
   );
 
-  // 4. Wall-mounted HVAC compressor units on apartment facades
+  // 4. Wall-mounted HVAC compressor units (mounted flush with building exterior walls)
   wallAcUnits.push(
-    { position: { x: -4.8, y: SIDEWALK_HEIGHT + 3.4, z: -2.6 }, rotationY: 0, scale: 0.9 },
-    { position: { x: -7.2, y: SIDEWALK_HEIGHT + 4.8, z: -2.6 }, rotationY: 0, scale: 0.9 },
-    { position: { x: 2.65, y: SIDEWALK_HEIGHT + 2.8, z: -5.2 }, rotationY: Math.PI * 0.5, scale: 0.88 },
-    { position: { x: 2.65, y: SIDEWALK_HEIGHT + 4.4, z: -6.8 }, rotationY: Math.PI * 0.5, scale: 0.88 },
-    { position: { x: -6.0 + 1.2, y: SIDEWALK_HEIGHT + 3.2, z: 2.6 }, rotationY: Math.PI, scale: 0.9 },
+    // Apartment Balcony (x: -12, z: -12), east brick facade at x = -9.68
+    { position: { x: -9.54, y: SIDEWALK_HEIGHT + 2.4, z: -11.2 }, rotationY: -Math.PI * 0.5, scale: 0.9 },
+    { position: { x: -9.54, y: SIDEWALK_HEIGHT + 3.8, z: -12.8 }, rotationY: -Math.PI * 0.5, scale: 0.9 },
+    // Apartment Warm (x: -12, z: -6, rotY: PI/2), east wall at x = -9.78
+    { position: { x: -9.64, y: SIDEWALK_HEIGHT + 2.5, z: -6.9 }, rotationY: -Math.PI * 0.5, scale: 0.9 },
+    { position: { x: -9.64, y: SIDEWALK_HEIGHT + 3.9, z: -5.1 }, rotationY: -Math.PI * 0.5, scale: 0.9 },
+    // Commercial Tower (x: 6, z: -12), west wall at x = 3.68
+    { position: { x: 3.82, y: SIDEWALK_HEIGHT + 3.2, z: -11.3 }, rotationY: Math.PI * 0.5, scale: 0.9 },
+    { position: { x: 3.82, y: SIDEWALK_HEIGHT + 4.8, z: -12.7 }, rotationY: Math.PI * 0.5, scale: 0.9 },
+    // South Apartment (x: -12, z: 12, rotY: PI), north wall at z = 9.78
+    { position: { x: -11.2, y: SIDEWALK_HEIGHT + 2.8, z: 9.64 }, rotationY: Math.PI, scale: 0.9 },
   );
 
-  // 5. Rooftop water towers
+  // 5. Rooftop water towers (stilt feet resting squarely on flat gravel roofs: y = SIDEWALK_HEIGHT + height + 0.10)
   waterTowers.push(
-    { position: { x: 6.2, y: SIDEWALK_HEIGHT + 7.4, z: -12.2 }, rotationY: 0.3, scale: 0.95 },
-    { position: { x: 12.0, y: SIDEWALK_HEIGHT + 6.2, z: -6.0 }, rotationY: -0.4, scale: 0.9 },
+    // Commercial Tower (x: 6, z: -12, height: 7.4) -> roof gravel at y = 0.18 + 7.4 + 0.10 = 7.68
+    { position: { x: 7.1, y: 7.68, z: -12.8 }, rotationY: 0.3, scale: 0.95 },
+    // South Commercial (x: 12, z: 12, height: 5.8) -> roof gravel at y = 0.18 + 5.8 + 0.10 = 6.08
+    { position: { x: 11.2, y: 6.08, z: 12.8 }, rotationY: -0.4, scale: 0.9 },
   );
 
-  // 6. Rooftop clotheslines with laundry
+  // 6. Rooftop clotheslines with laundry (posts anchored firmly into rooftop gravel: y = SIDEWALK_HEIGHT + height + 0.10)
   clotheslines.push({
-    position: { x: -12.0, y: SIDEWALK_HEIGHT + 6.4, z: -6.0 },
+    // Apartment Warm (x: -12, z: -6, height: 5.0) -> roof gravel at y = 0.18 + 5.0 + 0.10 = 5.28
+    position: { x: -12.0, y: 5.28, z: -6.0 },
     rotationY: 0.2,
     scale: 0.95,
   });

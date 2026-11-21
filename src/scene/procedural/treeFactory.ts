@@ -139,27 +139,43 @@ function createPineTree(): TreeMeshData {
 
 /**
  * Creates a graceful flowering Cherry Blossom (Sakura) tree geometry (sculptural dark trunk + spreading cloud canopy).
+ * The trunk branches seamlessly bifurcate from the main stem and penetrate deep into the floral clouds.
  */
 function createSakuraTree(): TreeMeshData {
   const trunkGeos: THREE.BufferGeometry[] = [];
   const canopyGeos: THREE.BufferGeometry[] = [];
 
-  // Sculptural angled trunk
-  const trunkBase = new THREE.CylinderGeometry(0.11, 0.17, 1.2, 7);
-  trunkBase.rotateZ(0.12);
-  trunkBase.translate(0.06, 0.6, 0);
-  trunkGeos.push(ensureIndexed(trunkBase));
+  // Lower sculptural trunk base rising and slightly bowing
+  const trunkLower = new THREE.CylinderGeometry(0.12, 0.18, 1.2, 7);
+  trunkLower.rotateZ(0.08);
+  trunkLower.translate(0.05, 0.6, 0);
+  trunkGeos.push(ensureIndexed(trunkLower));
 
-  const branchA = new THREE.CylinderGeometry(0.07, 0.1, 0.85, 6);
-  branchA.rotateZ(-0.48);
-  branchA.rotateY(0.3);
-  branchA.translate(-0.32, 1.35, 0.1);
-  trunkGeos.push(ensureIndexed(branchA));
+  // Central trunk continuation reaching straight up into the central floral cloud (Y: 1.1 -> 1.95)
+  const trunkUpper = new THREE.CylinderGeometry(0.08, 0.12, 0.9, 7);
+  trunkUpper.rotateZ(-0.06);
+  trunkUpper.rotateX(-0.05);
+  trunkUpper.translate(0.04, 1.55, -0.04);
+  trunkGeos.push(ensureIndexed(trunkUpper));
 
-  const branchB = new THREE.CylinderGeometry(0.06, 0.09, 0.95, 6);
-  branchB.rotateZ(0.42);
-  branchB.rotateY(-0.4);
-  branchB.translate(0.35, 1.4, -0.1);
+  // Left major bough branching off at Y=1.15 and reaching deep into cloudLeft
+  const branchL = new THREE.CylinderGeometry(0.055, 0.085, 0.95, 6);
+  branchL.rotateZ(-0.58);
+  branchL.rotateY(0.25);
+  branchL.translate(-0.38, 1.48, 0.12);
+  trunkGeos.push(ensureIndexed(branchL));
+
+  // Right major bough branching off at Y=1.2 and reaching deep into cloudRight
+  const branchR = new THREE.CylinderGeometry(0.05, 0.08, 0.92, 6);
+  branchR.rotateZ(0.55);
+  branchR.rotateY(-0.3);
+  branchR.translate(0.42, 1.52, -0.1);
+  trunkGeos.push(ensureIndexed(branchR));
+
+  // Rear bough reaching into cloudBack
+  const branchB = new THREE.CylinderGeometry(0.045, 0.07, 0.75, 6);
+  branchB.rotateX(-0.5);
+  branchB.translate(0.02, 1.68, -0.22);
   trunkGeos.push(ensureIndexed(branchB));
 
   // Spreading horizontal floral clouds
