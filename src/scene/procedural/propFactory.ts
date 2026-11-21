@@ -1,12 +1,15 @@
 import * as THREE from 'three';
 import type { GeneratedCity, Vec3 } from '@/sim/types';
 import { SIDEWALK_HEIGHT } from '@/config/constants';
+import type { TreeSpecies } from '@/scene/procedural/treeFactory';
+import { TREE_SPECIES_PALETTES } from '@/scene/procedural/treeFactory';
 
 export interface PropPlacement {
   position: Vec3;
   rotationY: number;
   scale: number;
   color?: string;
+  species?: TreeSpecies;
 }
 
 export interface CableCurve {
@@ -55,22 +58,44 @@ export function computeCityPropLayout(city: GeneratedCity): CityPropLayout {
 
     // A. PARK LOTS
     if (lot.type === 'park') {
-      const treeOffsets: [number, number, number, string][] = [
-        [-1.75, -1.75, 1.15, '#527c38'],
-        [1.65, -1.55, 0.98, '#6b9e44'],
-        [-1.6, 1.6, 1.05, '#41662c'],
-        [1.75, 1.7, 1.2, '#7da64a'],
-        [0.0, -1.85, 0.88, '#59853c'],
-        [-1.85, 0.0, 0.92, '#629440'],
-      ];
-      for (const [dx, dz, scale, col] of treeOffsets) {
-        trees.push({
-          position: { x: x + dx, y: SIDEWALK_HEIGHT + 0.14, z: z + dz },
-          rotationY: (dx * 1.7 + dz * 2.3),
-          scale,
-          color: col,
-        });
+      const isWestPlayground = lot.assetId === 'park_pocket' || lot.col === 3;
+      if (isWestPlayground) {
+        // West Lot: Playground with lush Oaks and weeping Willows around perimeter
+        const westTrees: [number, number, number, TreeSpecies, string][] = [
+          [-1.9, -1.85, 1.15, 'oak', TREE_SPECIES_PALETTES.oak.canopyColors[0]!],
+          [1.85, -1.85, 1.1, 'oak', TREE_SPECIES_PALETTES.oak.canopyColors[1]!],
+          [-1.9, 1.85, 1.05, 'willow', TREE_SPECIES_PALETTES.willow.canopyColors[0]!],
+          [1.85, 1.85, 1.0, 'willow', TREE_SPECIES_PALETTES.willow.canopyColors[1]!],
+        ];
+        for (const [dx, dz, scale, species, col] of westTrees) {
+          trees.push({
+            position: { x: x + dx, y: SIDEWALK_HEIGHT + 0.14, z: z + dz },
+            rotationY: (dx * 1.7 + dz * 2.3),
+            scale,
+            species,
+            color: col,
+          });
+        }
+      } else {
+        // East Lot: Botanical Garden with Flowering Sakura & Conifer Pines
+        const eastTrees: [number, number, number, TreeSpecies, string][] = [
+          [-1.85, -1.75, 1.15, 'sakura', TREE_SPECIES_PALETTES.sakura.canopyColors[0]!],
+          [1.75, -1.75, 1.1, 'sakura', TREE_SPECIES_PALETTES.sakura.canopyColors[1]!],
+          [-1.8, 1.75, 1.1, 'pine', TREE_SPECIES_PALETTES.pine.canopyColors[0]!],
+          [1.8, 1.75, 1.15, 'pine', TREE_SPECIES_PALETTES.pine.canopyColors[1]!],
+          [0.0, 1.9, 0.95, 'sakura', TREE_SPECIES_PALETTES.sakura.canopyColors[2]!],
+        ];
+        for (const [dx, dz, scale, species, col] of eastTrees) {
+          trees.push({
+            position: { x: x + dx, y: SIDEWALK_HEIGHT + 0.14, z: z + dz },
+            rotationY: (dx * 1.7 + dz * 2.3),
+            scale,
+            species,
+            color: col,
+          });
+        }
       }
+
       benches.push(
         { position: { x: x - 1.1, y: SIDEWALK_HEIGHT + 0.14, z: z + 0.75 }, rotationY: 0, scale: 1 },
         { position: { x: x + 1.1, y: SIDEWALK_HEIGHT + 0.14, z: z - 0.75 }, rotationY: Math.PI, scale: 1 },
@@ -90,8 +115,20 @@ export function computeCityPropLayout(city: GeneratedCity): CityPropLayout {
         { position: { x: x + 2.1, y: SIDEWALK_HEIGHT + 0.12, z: z }, rotationY: -Math.PI / 2, scale: 1 },
       );
       trees.push(
-        { position: { x: x - 2.2, y: SIDEWALK_HEIGHT + 0.12, z: z - 2.2 }, rotationY: 0.4, scale: 0.85, color: '#59853c' },
-        { position: { x: x + 2.2, y: SIDEWALK_HEIGHT + 0.12, z: z + 2.2 }, rotationY: 1.9, scale: 0.88, color: '#6ea344' },
+        {
+          position: { x: x - 2.2, y: SIDEWALK_HEIGHT + 0.12, z: z - 2.2 },
+          rotationY: 0.4,
+          scale: 0.95,
+          species: 'pine',
+          color: TREE_SPECIES_PALETTES.pine.canopyColors[0],
+        },
+        {
+          position: { x: x + 2.2, y: SIDEWALK_HEIGHT + 0.12, z: z + 2.2 },
+          rotationY: 1.9,
+          scale: 0.95,
+          species: 'sakura',
+          color: TREE_SPECIES_PALETTES.sakura.canopyColors[1],
+        },
       );
       trashCans.push({
         position: { x: x + 2.2, y: SIDEWALK_HEIGHT + 0.12, z: z - 1.2 },

@@ -2,7 +2,12 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { computeCityPropLayout } from '@/scene/procedural/propFactory';
+import { computeCityPropLayout, type PropPlacement } from '@/scene/procedural/propFactory';
+import {
+  createTreeSpeciesGeometries,
+  TREE_SPECIES_PALETTES,
+  type TreeSpecies,
+} from '@/scene/procedural/treeFactory';
 import type { GeneratedCity } from '@/sim/types';
 import type { WorldEngine } from '@/sim/worldEngine';
 
@@ -107,9 +112,29 @@ function createTrafficConeGeometry(): THREE.BufferGeometry {
 export function InstancedProps({ city, engine }: InstancedPropsComponentProps) {
   const layout = useMemo(() => computeCityPropLayout(city), [city]);
 
-  const treeTrunkRef = useRef<THREE.InstancedMesh>(null);
-  const treeCrownLowerRef = useRef<THREE.InstancedMesh>(null);
-  const treeCrownUpperRef = useRef<THREE.InstancedMesh>(null);
+  const treeSpeciesGeos = useMemo(() => createTreeSpeciesGeometries(), []);
+
+  const treesBySpecies = useMemo(() => {
+    const res: Record<TreeSpecies, PropPlacement[]> = {
+      oak: [],
+      pine: [],
+      sakura: [],
+      willow: [],
+    };
+    for (const tree of layout.trees) {
+      const sp = tree.species ?? 'oak';
+      res[sp].push(tree);
+    }
+    return res;
+  }, [layout.trees]);
+
+  const treeRefs = {
+    oak: { trunk: useRef<THREE.InstancedMesh>(null), canopy: useRef<THREE.InstancedMesh>(null) },
+    pine: { trunk: useRef<THREE.InstancedMesh>(null), canopy: useRef<THREE.InstancedMesh>(null) },
+    sakura: { trunk: useRef<THREE.InstancedMesh>(null), canopy: useRef<THREE.InstancedMesh>(null) },
+    willow: { trunk: useRef<THREE.InstancedMesh>(null), canopy: useRef<THREE.InstancedMesh>(null) },
+  };
+
   const lampPostRef = useRef<THREE.InstancedMesh>(null);
   const lampGlobeRef = useRef<THREE.InstancedMesh>(null);
   const lampConeRef = useRef<THREE.InstancedMesh>(null);
@@ -160,6 +185,10 @@ export function InstancedProps({ city, engine }: InstancedPropsComponentProps) {
 
   useEffect(() => {
     return () => {
+      (Object.keys(treeSpeciesGeos) as TreeSpecies[]).forEach((s) => {
+        treeSpeciesGeos[s].trunkGeometry.dispose();
+        treeSpeciesGeos[s].canopyGeometry.dispose();
+      });
       poleGeo.dispose();
       hydrantGeo.dispose();
       trashGeo.dispose();
@@ -167,48 +196,36 @@ export function InstancedProps({ city, engine }: InstancedPropsComponentProps) {
       cableLineObject.geometry.dispose();
       (cableLineObject.material as THREE.Material).dispose();
     };
-  }, [poleGeo, hydrantGeo, trashGeo, coneGeo, cableLineObject]);
+  }, [treeSpeciesGeos, poleGeo, hydrantGeo, trashGeo, coneGeo, cableLineObject]);
 
   // Initial placement of all props
   useEffect(() => {
-    // 1. Tree trunks
-    if (treeTrunkRef.current) {
-      layout.trees.forEach((t, i) => {
-        scratchObj.position.set(t.position.x, t.position.y + 0.65 * t.scale, t.position.z);
+    // 1. Species-specific trees
+    const speciesList: TreeSpecies[] = ['oak', 'pine', 'sakura', 'willow'];
+    for (const sp of speciesList) {
+      const list = treesBySpecies[sp];
+      const trunkMesh = treeRefs[sp].trunk.current;
+      const canopyMesh = treeRefs[sp].canopy.current;
+
+      list.forEach((t, i) => {
+        scratchObj.position.set(t.position.x, t.position.y, t.position.z);
         scratchObj.rotation.set(0, t.rotationY, 0);
-        scratchObj.scale.set(t.scale, t.scale * 1.15, t.scale);
+        scratchObj.scale.set(t.scale, t.scale, t.scale);
         scratchObj.updateMatrix();
-        treeTrunkRef.current!.setMatrixAt(i, scratchObj.matrix);
+
+        if (trunkMesh) trunkMesh.setMatrixAt(i, scratchObj.matrix);
+        if (canopyMesh) {
+          canopyMesh.setMatrixAt(i, scratchObj.matrix);
+          scratchColor.set(t.color ?? TREE_SPECIES_PALETTES[sp].canopyColors[0]!);
+          canopyMesh.setColorAt(i, scratchColor);
+        }
       });
-      treeTrunkRef.current.instanceMatrix.needsUpdate = true;
-    }
 
-    // 2. Tree crowns (lower and upper clusters for organic layered silhouette)
-    if (treeCrownLowerRef.current && treeCrownUpperRef.current) {
-      layout.trees.forEach((t, i) => {
-        scratchColor.set(t.color ?? '#5f8d4e');
-
-        // Lower wider crown cluster
-        scratchObj.position.set(t.position.x, t.position.y + 1.45 * t.scale, t.position.z);
-        scratchObj.rotation.set(0.1, t.rotationY, -0.1);
-        scratchObj.scale.set(t.scale * 1.05, t.scale * 0.9, t.scale * 1.05);
-        scratchObj.updateMatrix();
-        treeCrownLowerRef.current!.setMatrixAt(i, scratchObj.matrix);
-        treeCrownLowerRef.current!.setColorAt(i, scratchColor);
-
-        // Upper smaller crown cluster
-        scratchObj.position.set(t.position.x + 0.08, t.position.y + 2.05 * t.scale, t.position.z - 0.06);
-        scratchObj.rotation.set(-0.1, t.rotationY + 0.5, 0.1);
-        scratchObj.scale.set(t.scale * 0.78, t.scale * 0.85, t.scale * 0.78);
-        scratchObj.updateMatrix();
-        treeCrownUpperRef.current!.setMatrixAt(i, scratchObj.matrix);
-        scratchColor.clone().offsetHSL(0.02, 0.05, 0.04);
-        treeCrownUpperRef.current!.setColorAt(i, scratchColor);
-      });
-      treeCrownLowerRef.current.instanceMatrix.needsUpdate = true;
-      treeCrownUpperRef.current.instanceMatrix.needsUpdate = true;
-      if (treeCrownLowerRef.current.instanceColor) treeCrownLowerRef.current.instanceColor.needsUpdate = true;
-      if (treeCrownUpperRef.current.instanceColor) treeCrownUpperRef.current.instanceColor.needsUpdate = true;
+      if (trunkMesh) trunkMesh.instanceMatrix.needsUpdate = true;
+      if (canopyMesh) {
+        canopyMesh.instanceMatrix.needsUpdate = true;
+        if (canopyMesh.instanceColor) canopyMesh.instanceColor.needsUpdate = true;
+      }
     }
 
     // 3. Streetlamps
@@ -345,36 +362,26 @@ export function InstancedProps({ city, engine }: InstancedPropsComponentProps) {
       lampConeMatRef.current.opacity = emissive * 0.16;
     }
 
-    if (treeCrownLowerRef.current && treeCrownUpperRef.current) {
-      for (let i = 0; i < layout.trees.length; i++) {
-        const tree = layout.trees[i]!;
-        const swayX = Math.sin(t * 1.5 + i * 0.8) * 0.055;
-        const swayZ = Math.cos(t * 1.2 + i * 1.1) * 0.045;
+    // Species-specific wind sway
+    const speciesList: TreeSpecies[] = ['oak', 'pine', 'sakura', 'willow'];
+    for (const sp of speciesList) {
+      const list = treesBySpecies[sp];
+      const canopyMesh = treeRefs[sp].canopy.current;
+      if (!canopyMesh || list.length === 0) continue;
 
-        // Sway lower crown
-        scratchObj.position.set(
-          tree.position.x + swayX,
-          tree.position.y + 1.45 * tree.scale,
-          tree.position.z + swayZ,
-        );
-        scratchObj.rotation.set(swayZ * 0.5, tree.rotationY, -swayX * 0.5);
-        scratchObj.scale.set(tree.scale * 1.05, tree.scale * 0.9, tree.scale * 1.05);
-        scratchObj.updateMatrix();
-        treeCrownLowerRef.current.setMatrixAt(i, scratchObj.matrix);
+      for (let i = 0; i < list.length; i++) {
+        const tree = list[i]!;
+        const swayAmp = sp === 'willow' ? 0.08 : sp === 'sakura' ? 0.05 : 0.038;
+        const swayX = Math.sin(t * 1.6 + i * 0.9) * swayAmp * tree.scale;
+        const swayZ = Math.cos(t * 1.3 + i * 1.2) * swayAmp * 0.8 * tree.scale;
 
-        // Sway upper crown with slightly higher amplitude
-        scratchObj.position.set(
-          tree.position.x + swayX * 1.35 + 0.08,
-          tree.position.y + 2.05 * tree.scale,
-          tree.position.z + swayZ * 1.35 - 0.06,
-        );
-        scratchObj.rotation.set(swayZ * 0.8, tree.rotationY + 0.5, -swayX * 0.8);
-        scratchObj.scale.set(tree.scale * 0.78, tree.scale * 0.85, tree.scale * 0.78);
+        scratchObj.position.set(tree.position.x + swayX, tree.position.y, tree.position.z + swayZ);
+        scratchObj.rotation.set(swayZ * 0.4, tree.rotationY, -swayX * 0.4);
+        scratchObj.scale.set(tree.scale, tree.scale, tree.scale);
         scratchObj.updateMatrix();
-        treeCrownUpperRef.current.setMatrixAt(i, scratchObj.matrix);
+        canopyMesh.setMatrixAt(i, scratchObj.matrix);
       }
-      treeCrownLowerRef.current.instanceMatrix.needsUpdate = true;
-      treeCrownUpperRef.current.instanceMatrix.needsUpdate = true;
+      canopyMesh.instanceMatrix.needsUpdate = true;
     }
   });
 
@@ -393,31 +400,86 @@ export function InstancedProps({ city, engine }: InstancedPropsComponentProps) {
         <meshStandardMaterial color="#473121" roughness={0.88} />
       </instancedMesh>
 
-      {/* Tree Trunks */}
-      <instancedMesh ref={treeTrunkRef} args={[undefined, undefined, layout.trees.length]} castShadow>
-        <cylinderGeometry args={[0.11, 0.19, 1.3, 7]} />
-        <meshStandardMaterial color="#543725" roughness={0.92} />
-      </instancedMesh>
+      {/* Species-Specific Trees: Oak, Pine, Sakura, Willow */}
+      {treesBySpecies.oak.length > 0 && (
+        <>
+          <instancedMesh
+            ref={treeRefs.oak.trunk}
+            args={[treeSpeciesGeos.oak.trunkGeometry, undefined, treesBySpecies.oak.length]}
+            castShadow
+          >
+            <meshStandardMaterial color={TREE_SPECIES_PALETTES.oak.trunkColor} roughness={0.9} />
+          </instancedMesh>
+          <instancedMesh
+            ref={treeRefs.oak.canopy}
+            args={[treeSpeciesGeos.oak.canopyGeometry, undefined, treesBySpecies.oak.length]}
+            castShadow
+            receiveShadow
+          >
+            <meshStandardMaterial roughness={0.82} flatShading />
+          </instancedMesh>
+        </>
+      )}
 
-      {/* Multi-clustered Tree Canopies */}
-      <instancedMesh
-        ref={treeCrownLowerRef}
-        args={[undefined, undefined, layout.trees.length]}
-        castShadow
-        receiveShadow
-      >
-        <dodecahedronGeometry args={[0.82, 0]} />
-        <meshStandardMaterial roughness={0.82} flatShading />
-      </instancedMesh>
-      <instancedMesh
-        ref={treeCrownUpperRef}
-        args={[undefined, undefined, layout.trees.length]}
-        castShadow
-        receiveShadow
-      >
-        <dodecahedronGeometry args={[0.62, 0]} />
-        <meshStandardMaterial roughness={0.82} flatShading />
-      </instancedMesh>
+      {treesBySpecies.pine.length > 0 && (
+        <>
+          <instancedMesh
+            ref={treeRefs.pine.trunk}
+            args={[treeSpeciesGeos.pine.trunkGeometry, undefined, treesBySpecies.pine.length]}
+            castShadow
+          >
+            <meshStandardMaterial color={TREE_SPECIES_PALETTES.pine.trunkColor} roughness={0.9} />
+          </instancedMesh>
+          <instancedMesh
+            ref={treeRefs.pine.canopy}
+            args={[treeSpeciesGeos.pine.canopyGeometry, undefined, treesBySpecies.pine.length]}
+            castShadow
+            receiveShadow
+          >
+            <meshStandardMaterial roughness={0.85} flatShading />
+          </instancedMesh>
+        </>
+      )}
+
+      {treesBySpecies.sakura.length > 0 && (
+        <>
+          <instancedMesh
+            ref={treeRefs.sakura.trunk}
+            args={[treeSpeciesGeos.sakura.trunkGeometry, undefined, treesBySpecies.sakura.length]}
+            castShadow
+          >
+            <meshStandardMaterial color={TREE_SPECIES_PALETTES.sakura.trunkColor} roughness={0.92} />
+          </instancedMesh>
+          <instancedMesh
+            ref={treeRefs.sakura.canopy}
+            args={[treeSpeciesGeos.sakura.canopyGeometry, undefined, treesBySpecies.sakura.length]}
+            castShadow
+            receiveShadow
+          >
+            <meshStandardMaterial roughness={0.75} flatShading />
+          </instancedMesh>
+        </>
+      )}
+
+      {treesBySpecies.willow.length > 0 && (
+        <>
+          <instancedMesh
+            ref={treeRefs.willow.trunk}
+            args={[treeSpeciesGeos.willow.trunkGeometry, undefined, treesBySpecies.willow.length]}
+            castShadow
+          >
+            <meshStandardMaterial color={TREE_SPECIES_PALETTES.willow.trunkColor} roughness={0.88} />
+          </instancedMesh>
+          <instancedMesh
+            ref={treeRefs.willow.canopy}
+            args={[treeSpeciesGeos.willow.canopyGeometry, undefined, treesBySpecies.willow.length]}
+            castShadow
+            receiveShadow
+          >
+            <meshStandardMaterial roughness={0.8} flatShading />
+          </instancedMesh>
+        </>
+      )}
 
       {/* Streetlamps */}
       <instancedMesh ref={lampPostRef} args={[undefined, undefined, layout.lamps.length]} castShadow>
