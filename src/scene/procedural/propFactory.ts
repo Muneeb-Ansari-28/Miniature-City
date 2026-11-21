@@ -30,6 +30,12 @@ export interface CityPropLayout {
   trashCans: PropPlacement[];
   trafficCones: PropPlacement[];
   cables: CableCurve[];
+  manholes: PropPlacement[];
+  stormDrains: PropPlacement[];
+  newspaperBoxes: PropPlacement[];
+  wallAcUnits: PropPlacement[];
+  waterTowers: PropPlacement[];
+  clotheslines: PropPlacement[];
 }
 
 /**
@@ -252,6 +258,89 @@ export function computeCityPropLayout(city: GeneratedCity): CityPropLayout {
     p2: { x: -6.5, y: SIDEWALK_HEIGHT + 3.9, z: 6.2 },
   });
 
+  // E. ARCHITECTURAL & STREET MICRO-DETAILS
+  const manholes: PropPlacement[] = [];
+  const stormDrains: PropPlacement[] = [];
+  const newspaperBoxes: PropPlacement[] = [];
+  const wallAcUnits: PropPlacement[] = [];
+  const waterTowers: PropPlacement[] = [];
+  const clotheslines: PropPlacement[] = [];
+
+  // 1. Sewer manhole covers at road intersections and plaza
+  for (const inter of city.intersections) {
+    manholes.push({
+      position: { x: inter.worldPos.x + 0.15, y: 0.015, z: inter.worldPos.z - 0.15 },
+      rotationY: 0.35,
+      scale: 1,
+    });
+  }
+  manholes.push({
+    position: { x: 5.2, y: SIDEWALK_HEIGHT + 0.12, z: -4.8 },
+    rotationY: 0.8,
+    scale: 0.95,
+  });
+
+  // 2. Curb storm drain grates at road gutters near crosswalks
+  const drainOffsets = [
+    [-1.85, 2.15, 0],
+    [1.85, 2.15, 0],
+    [-2.15, -1.85, Math.PI * 0.5],
+    [2.15, -1.85, Math.PI * 0.5],
+  ];
+  for (const inter of city.intersections) {
+    for (const [dx, dz, rot] of drainOffsets) {
+      stormDrains.push({
+        position: { x: inter.worldPos.x + dx!, y: 0.02, z: inter.worldPos.z + dz! },
+        rotationY: rot!,
+        scale: 1,
+      });
+    }
+  }
+
+  // 3. Street newspaper vending boxes on sidewalk corners
+  newspaperBoxes.push(
+    {
+      position: { x: -2.15, y: SIDEWALK_HEIGHT, z: 2.15 },
+      rotationY: Math.PI * 0.25,
+      scale: 0.9,
+      color: '#e63946', // Red box
+    },
+    {
+      position: { x: 2.15, y: SIDEWALK_HEIGHT, z: -2.15 },
+      rotationY: -Math.PI * 0.75,
+      scale: 0.9,
+      color: '#1d3557', // Navy box
+    },
+    {
+      position: { x: -2.15, y: SIDEWALK_HEIGHT, z: -2.15 },
+      rotationY: -Math.PI * 0.25,
+      scale: 0.9,
+      color: '#e9c46a', // Yellow box
+    },
+  );
+
+  // 4. Wall-mounted HVAC compressor units on apartment facades
+  wallAcUnits.push(
+    { position: { x: -4.8, y: SIDEWALK_HEIGHT + 3.4, z: -2.6 }, rotationY: 0, scale: 0.9 },
+    { position: { x: -7.2, y: SIDEWALK_HEIGHT + 4.8, z: -2.6 }, rotationY: 0, scale: 0.9 },
+    { position: { x: 2.65, y: SIDEWALK_HEIGHT + 2.8, z: -5.2 }, rotationY: Math.PI * 0.5, scale: 0.88 },
+    { position: { x: 2.65, y: SIDEWALK_HEIGHT + 4.4, z: -6.8 }, rotationY: Math.PI * 0.5, scale: 0.88 },
+    { position: { x: -6.0 + 1.2, y: SIDEWALK_HEIGHT + 3.2, z: 2.6 }, rotationY: Math.PI, scale: 0.9 },
+  );
+
+  // 5. Rooftop water towers
+  waterTowers.push(
+    { position: { x: 6.2, y: SIDEWALK_HEIGHT + 7.4, z: -12.2 }, rotationY: 0.3, scale: 0.95 },
+    { position: { x: 12.0, y: SIDEWALK_HEIGHT + 6.2, z: -6.0 }, rotationY: -0.4, scale: 0.9 },
+  );
+
+  // 6. Rooftop clotheslines with laundry
+  clotheslines.push({
+    position: { x: -12.0, y: SIDEWALK_HEIGHT + 6.4, z: -6.0 },
+    rotationY: 0.2,
+    scale: 0.95,
+  });
+
   return {
     trees,
     lamps,
@@ -264,6 +353,12 @@ export function computeCityPropLayout(city: GeneratedCity): CityPropLayout {
     trashCans,
     trafficCones,
     cables,
+    manholes,
+    stormDrains,
+    newspaperBoxes,
+    wallAcUnits,
+    waterTowers,
+    clotheslines,
   };
 }
 

@@ -8,6 +8,14 @@ import {
   TREE_SPECIES_PALETTES,
   type TreeSpecies,
 } from '@/scene/procedural/treeFactory';
+import {
+  createManholeGeometry,
+  createStormDrainGeometry,
+  createNewspaperBoxGeometry,
+  createWallAcUnitGeometry,
+  createRooftopWaterTowerGeometry,
+  createClotheslineGeometry,
+} from '@/scene/procedural/microDetailFactory';
 import type { GeneratedCity } from '@/sim/types';
 import type { WorldEngine } from '@/sim/worldEngine';
 
@@ -146,6 +154,12 @@ export function InstancedProps({ city, engine }: InstancedPropsComponentProps) {
   const hydrantRef = useRef<THREE.InstancedMesh>(null);
   const trashCanRef = useRef<THREE.InstancedMesh>(null);
   const coneRef = useRef<THREE.InstancedMesh>(null);
+  const manholeRef = useRef<THREE.InstancedMesh>(null);
+  const stormDrainRef = useRef<THREE.InstancedMesh>(null);
+  const newspaperBoxRef = useRef<THREE.InstancedMesh>(null);
+  const wallAcUnitRef = useRef<THREE.InstancedMesh>(null);
+  const waterTowerRef = useRef<THREE.InstancedMesh>(null);
+  const clotheslineRef = useRef<THREE.InstancedMesh>(null);
 
   const lampGlobeMatRef = useRef<THREE.MeshStandardMaterial>(null);
   const lampConeMatRef = useRef<THREE.MeshBasicMaterial>(null);
@@ -155,6 +169,12 @@ export function InstancedProps({ city, engine }: InstancedPropsComponentProps) {
   const hydrantGeo = useMemo(() => createHydrantGeometry(), []);
   const trashGeo = useMemo(() => createTrashCanGeometry(), []);
   const coneGeo = useMemo(() => createTrafficConeGeometry(), []);
+  const manholeGeo = useMemo(() => createManholeGeometry(), []);
+  const stormDrainGeo = useMemo(() => createStormDrainGeometry(), []);
+  const newspaperBoxGeo = useMemo(() => createNewspaperBoxGeometry(), []);
+  const wallAcGeo = useMemo(() => createWallAcUnitGeometry(), []);
+  const waterTowerGeo = useMemo(() => createRooftopWaterTowerGeometry(), []);
+  const clotheslineGeo = useMemo(() => createClotheslineGeometry(), []);
 
   // Construct 3D catenary power cable line segments
   const cableLineObject = useMemo(() => {
@@ -193,10 +213,29 @@ export function InstancedProps({ city, engine }: InstancedPropsComponentProps) {
       hydrantGeo.dispose();
       trashGeo.dispose();
       coneGeo.dispose();
+      manholeGeo.dispose();
+      stormDrainGeo.dispose();
+      newspaperBoxGeo.dispose();
+      wallAcGeo.dispose();
+      waterTowerGeo.dispose();
+      clotheslineGeo.dispose();
       cableLineObject.geometry.dispose();
       (cableLineObject.material as THREE.Material).dispose();
     };
-  }, [treeSpeciesGeos, poleGeo, hydrantGeo, trashGeo, coneGeo, cableLineObject]);
+  }, [
+    treeSpeciesGeos,
+    poleGeo,
+    hydrantGeo,
+    trashGeo,
+    coneGeo,
+    manholeGeo,
+    stormDrainGeo,
+    newspaperBoxGeo,
+    wallAcGeo,
+    waterTowerGeo,
+    clotheslineGeo,
+    cableLineObject,
+  ]);
 
   // Initial placement of all props
   useEffect(() => {
@@ -348,7 +387,94 @@ export function InstancedProps({ city, engine }: InstancedPropsComponentProps) {
       });
       coneRef.current.instanceMatrix.needsUpdate = true;
     }
-  }, [layout, poleGeo, hydrantGeo, trashGeo, coneGeo]);
+
+    // 12. Sewer manhole covers
+    if (manholeRef.current) {
+      layout.manholes.forEach((m, i) => {
+        scratchObj.position.set(m.position.x, m.position.y, m.position.z);
+        scratchObj.rotation.set(0, m.rotationY, 0);
+        scratchObj.scale.set(m.scale, m.scale, m.scale);
+        scratchObj.updateMatrix();
+        manholeRef.current!.setMatrixAt(i, scratchObj.matrix);
+      });
+      manholeRef.current.instanceMatrix.needsUpdate = true;
+    }
+
+    // 13. Storm drain grates
+    if (stormDrainRef.current) {
+      layout.stormDrains.forEach((s, i) => {
+        scratchObj.position.set(s.position.x, s.position.y, s.position.z);
+        scratchObj.rotation.set(0, s.rotationY, 0);
+        scratchObj.scale.set(s.scale, s.scale, s.scale);
+        scratchObj.updateMatrix();
+        stormDrainRef.current!.setMatrixAt(i, scratchObj.matrix);
+      });
+      stormDrainRef.current.instanceMatrix.needsUpdate = true;
+    }
+
+    // 14. Street newspaper vending boxes
+    if (newspaperBoxRef.current) {
+      layout.newspaperBoxes.forEach((n, i) => {
+        scratchObj.position.set(n.position.x, n.position.y, n.position.z);
+        scratchObj.rotation.set(0, n.rotationY, 0);
+        scratchObj.scale.set(n.scale, n.scale, n.scale);
+        scratchObj.updateMatrix();
+        newspaperBoxRef.current!.setMatrixAt(i, scratchObj.matrix);
+        scratchColor.set(n.color ?? '#e63946');
+        newspaperBoxRef.current!.setColorAt(i, scratchColor);
+      });
+      newspaperBoxRef.current.instanceMatrix.needsUpdate = true;
+      if (newspaperBoxRef.current.instanceColor) newspaperBoxRef.current.instanceColor.needsUpdate = true;
+    }
+
+    // 15. Exterior wall AC compressor units
+    if (wallAcUnitRef.current) {
+      layout.wallAcUnits.forEach((a, i) => {
+        scratchObj.position.set(a.position.x, a.position.y, a.position.z);
+        scratchObj.rotation.set(0, a.rotationY, 0);
+        scratchObj.scale.set(a.scale, a.scale, a.scale);
+        scratchObj.updateMatrix();
+        wallAcUnitRef.current!.setMatrixAt(i, scratchObj.matrix);
+      });
+      wallAcUnitRef.current.instanceMatrix.needsUpdate = true;
+    }
+
+    // 16. Rooftop water cooling towers
+    if (waterTowerRef.current) {
+      layout.waterTowers.forEach((w, i) => {
+        scratchObj.position.set(w.position.x, w.position.y, w.position.z);
+        scratchObj.rotation.set(0, w.rotationY, 0);
+        scratchObj.scale.set(w.scale, w.scale, w.scale);
+        scratchObj.updateMatrix();
+        waterTowerRef.current!.setMatrixAt(i, scratchObj.matrix);
+      });
+      waterTowerRef.current.instanceMatrix.needsUpdate = true;
+    }
+
+    // 17. Rooftop clotheslines with laundry
+    if (clotheslineRef.current) {
+      layout.clotheslines.forEach((c, i) => {
+        scratchObj.position.set(c.position.x, c.position.y, c.position.z);
+        scratchObj.rotation.set(0, c.rotationY, 0);
+        scratchObj.scale.set(c.scale, c.scale, c.scale);
+        scratchObj.updateMatrix();
+        clotheslineRef.current!.setMatrixAt(i, scratchObj.matrix);
+      });
+      clotheslineRef.current.instanceMatrix.needsUpdate = true;
+    }
+  }, [
+    layout,
+    poleGeo,
+    hydrantGeo,
+    trashGeo,
+    coneGeo,
+    manholeGeo,
+    stormDrainGeo,
+    newspaperBoxGeo,
+    wallAcGeo,
+    waterTowerGeo,
+    clotheslineGeo,
+  ]);
 
   // Gentle wind sway on tree crowns + night streetlamp emissive modulation
   useFrame(({ clock }) => {
@@ -547,6 +673,48 @@ export function InstancedProps({ city, engine }: InstancedPropsComponentProps) {
         <cylinderGeometry args={[0.07, 0.08, 0.48, 6]} />
         <meshStandardMaterial color="#424752" roughness={0.7} />
       </instancedMesh>
+
+      {/* Sewer Manhole Covers */}
+      {layout.manholes.length > 0 && (
+        <instancedMesh ref={manholeRef} args={[manholeGeo, undefined, layout.manholes.length]} receiveShadow>
+          <meshStandardMaterial color="#32363e" roughness={0.7} metalness={0.45} />
+        </instancedMesh>
+      )}
+
+      {/* Storm Drain Grates */}
+      {layout.stormDrains.length > 0 && (
+        <instancedMesh ref={stormDrainRef} args={[stormDrainGeo, undefined, layout.stormDrains.length]}>
+          <meshStandardMaterial color="#23262c" roughness={0.65} metalness={0.5} />
+        </instancedMesh>
+      )}
+
+      {/* Street Newspaper Vending Boxes */}
+      {layout.newspaperBoxes.length > 0 && (
+        <instancedMesh ref={newspaperBoxRef} args={[newspaperBoxGeo, undefined, layout.newspaperBoxes.length]} castShadow>
+          <meshStandardMaterial roughness={0.6} metalness={0.2} />
+        </instancedMesh>
+      )}
+
+      {/* Wall AC Compressor Units */}
+      {layout.wallAcUnits.length > 0 && (
+        <instancedMesh ref={wallAcUnitRef} args={[wallAcGeo, undefined, layout.wallAcUnits.length]} castShadow>
+          <meshStandardMaterial color="#e8edf2" roughness={0.45} metalness={0.2} />
+        </instancedMesh>
+      )}
+
+      {/* Rooftop Water Cooling Towers */}
+      {layout.waterTowers.length > 0 && (
+        <instancedMesh ref={waterTowerRef} args={[waterTowerGeo, undefined, layout.waterTowers.length]} castShadow receiveShadow>
+          <meshStandardMaterial color="#8b5e34" roughness={0.88} />
+        </instancedMesh>
+      )}
+
+      {/* Rooftop Clotheslines with Laundry */}
+      {layout.clotheslines.length > 0 && (
+        <instancedMesh ref={clotheslineRef} args={[clotheslineGeo, undefined, layout.clotheslines.length]} castShadow>
+          <meshStandardMaterial color="#f7f9fa" roughness={0.8} />
+        </instancedMesh>
+      )}
     </group>
   );
 }
