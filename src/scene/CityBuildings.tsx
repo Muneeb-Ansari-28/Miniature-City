@@ -102,13 +102,19 @@ export function CityBuildings({ city, engine }: CityBuildingsProps) {
     };
   }, [sharedMats]);
 
-  useFrame(() => {
+  useFrame((state) => {
     const strength = engine.atmosphere.emissiveStrength;
     if (Math.abs(strength - lastEmissiveRef.current) > 0.005) {
       lastEmissiveRef.current = strength;
       sharedMats.litWindowWarm.emissiveIntensity = 0.25 + strength * 1.95;
       sharedMats.litWindowAmber.emissiveIntensity = 0.2 + strength * 1.75;
     }
+    // Animate realistic fountain water ripples & cascading waterfall shimmer
+    if (sharedMats.waterMat.userData.uTime) {
+      sharedMats.waterMat.userData.uTime.value = state.clock.getElapsedTime();
+    }
+    const t = state.clock.getElapsedTime();
+    sharedMats.waterFlow.opacity = 0.75 + Math.sin(t * 7.0) * 0.06;
   });
 
   const selectedPoi = selectedPoiId ? engine.getPoiById(selectedPoiId) : undefined;
