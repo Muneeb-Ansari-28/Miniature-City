@@ -1,6 +1,13 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { CityLot } from '@/sim/types';
+import {
+  createPlaygroundSlideGeometries,
+  createSwingSetGeometries,
+  createSandboxGeometries,
+  createSeesawGeometries,
+  createGardenAmenitiesGeometries,
+} from '@/scene/procedural/playgroundFactory';
 
 export interface BuildingSharedMaterials {
   litWindowWarm: THREE.MeshStandardMaterial;
@@ -37,6 +44,12 @@ export interface BuildingSharedMaterials {
   ketchupRed: THREE.MeshStandardMaterial;
   mustardYellow: THREE.MeshStandardMaterial;
   kraftBox: THREE.MeshStandardMaterial;
+  slideRed: THREE.MeshStandardMaterial;
+  canopyYellow: THREE.MeshStandardMaterial;
+  sandGold: THREE.MeshStandardMaterial;
+  toyCyan: THREE.MeshStandardMaterial;
+  rubberSeat: THREE.MeshStandardMaterial;
+  flowerPink: THREE.MeshStandardMaterial;
 }
 
 export function createBuildingSharedMaterials(): BuildingSharedMaterials {
@@ -234,6 +247,31 @@ export function createBuildingSharedMaterials(): BuildingSharedMaterials {
       color: '#b58450',
       roughness: 0.85,
     }),
+    slideRed: new THREE.MeshStandardMaterial({
+      color: '#e63946',
+      roughness: 0.35,
+      metalness: 0.1,
+    }),
+    canopyYellow: new THREE.MeshStandardMaterial({
+      color: '#ffb703',
+      roughness: 0.55,
+    }),
+    sandGold: new THREE.MeshStandardMaterial({
+      color: '#e9c46a',
+      roughness: 0.95,
+    }),
+    toyCyan: new THREE.MeshStandardMaterial({
+      color: '#2a9d8f',
+      roughness: 0.4,
+    }),
+    rubberSeat: new THREE.MeshStandardMaterial({
+      color: '#264653',
+      roughness: 0.8,
+    }),
+    flowerPink: new THREE.MeshStandardMaterial({
+      color: '#f72585',
+      roughness: 0.6,
+    }),
   };
 }
 
@@ -324,26 +362,108 @@ export function buildProceduralLotMesh(
   const isBurgerDiner = lot.style === 'burger_diner';
   const isCommercialTower = lot.style === 'commercial_tower';
 
-  // 1. PARK LOT
+  // 1. PARK LOT: West (Children's Playground) & East (Botanical Garden)
   if (lot.type === 'park') {
+    const isWestPlayground = lot.assetId === 'park_pocket' || lot.col === 3;
     const lawn = new THREE.Mesh(makeBox(5.3, 0.16, 5.3, 0, 0.24, 0), mats.grassMat);
     lawn.receiveShadow = true;
     group.add(lawn);
 
-    // Diagonal stone paver paths + low concrete border wall
-    addMergedBucket(
-      group,
-      [
-        makeBox(1.2, 0.18, 5.35, 0, 0.25, 0),
-        makeBox(5.35, 0.18, 1.2, 0, 0.25, 0),
-        makeBox(0.3, 0.32, 5.35, -2.5, 0.3, 0),
-        makeBox(0.3, 0.32, 5.35, 2.5, 0.3, 0),
-        makeBox(5.35, 0.32, 0.3, 0, 0.3, -2.5),
-      ],
-      mats.concreteTrim,
-      true,
-      true,
-    );
+    if (isWestPlayground) {
+      // 1. WEST LOT: CHILDREN'S PLAYGROUND
+      // Safety rubber safety mats under swings and slide chute
+      const rubberMats = [
+        makeBox(2.2, 0.02, 1.4, 0.95, 0.33, 0.65),
+        makeBox(0.84, 0.02, 2.2, -0.95, 0.33, -0.35),
+      ];
+      addMergedBucket(group, rubberMats, mats.rubberSeat, false, true);
+
+      // Slide Tower at (-0.95, 0.32, -0.65)
+      const slide = createPlaygroundSlideGeometries();
+      slide.wood.translate(-0.95, 0.32, -0.65);
+      slide.chute.translate(-0.95, 0.32, -0.65);
+      slide.roof.translate(-0.95, 0.32, -0.65);
+      addMergedBucket(group, [slide.wood], mats.woodDeck, true, true);
+      addMergedBucket(group, [slide.chute], mats.slideRed, true, true);
+      addMergedBucket(group, [slide.roof], mats.canopyYellow, true, true);
+
+      // Swing Set at (0.95, 0.32, 0.65)
+      const swing = createSwingSetGeometries();
+      swing.frame.translate(0.95, 0.32, 0.65);
+      swing.seats.translate(0.95, 0.32, 0.65);
+      addMergedBucket(group, [swing.frame], mats.woodDeck, true, true);
+      addMergedBucket(group, [swing.seats], mats.rubberSeat, true, true);
+
+      // Octagonal Sandbox at (-0.95, 0.32, 1.25)
+      const sandbox = createSandboxGeometries();
+      sandbox.rim.translate(-0.95, 0.32, 1.25);
+      sandbox.sand.translate(-0.95, 0.32, 1.25);
+      sandbox.toys.translate(-0.95, 0.32, 1.25);
+      addMergedBucket(group, [sandbox.rim], mats.woodDeck, true, true);
+      addMergedBucket(group, [sandbox.sand], mats.sandGold, false, true);
+      addMergedBucket(group, [sandbox.toys], mats.toyCyan, true, true);
+
+      // Seesaw at (0.95, 0.32, -0.95)
+      const seesaw = createSeesawGeometries();
+      seesaw.fulcrum.translate(0.95, 0.32, -0.95);
+      seesaw.plank.translate(0.95, 0.32, -0.95);
+      addMergedBucket(group, [seesaw.fulcrum], mats.metalDark, true, true);
+      addMergedBucket(group, [seesaw.plank], mats.canopyYellow, true, true);
+
+      // Low stone border wall with entrance openings
+      addMergedBucket(
+        group,
+        [
+          makeBox(0.24, 0.28, 5.35, -2.5, 0.3, 0),
+          makeBox(5.35, 0.28, 0.24, 0, 0.3, -2.5),
+          makeBox(5.35, 0.28, 0.24, 0, 0.3, 2.5),
+        ],
+        mats.concreteTrim,
+        true,
+        true,
+      );
+    } else {
+      // 2. EAST LOT: BOTANICAL GARDEN
+      const amenities = createGardenAmenitiesGeometries();
+      amenities.birdbath.translate(0, 0.32, 0);
+      amenities.water.translate(0, 0.32, 0);
+      amenities.fountain.translate(1.4, 0.32, -1.1);
+      amenities.steppingStones.translate(0, 0.32, 0);
+
+      addMergedBucket(group, [amenities.birdbath, amenities.fountain], mats.concreteTrim, true, true);
+      addMergedBucket(group, [amenities.water], mats.waterFlow, false, true);
+      addMergedBucket(group, [amenities.steppingStones], mats.concreteDark, false, true);
+
+      // Curved stone pathways & low decorative border
+      addMergedBucket(
+        group,
+        [
+          makeBox(1.1, 0.04, 5.35, 0, 0.33, 0),
+          makeBox(5.35, 0.04, 1.1, 0, 0.33, 0),
+          makeBox(0.24, 0.28, 5.35, 2.5, 0.3, 0),
+          makeBox(5.35, 0.28, 0.24, 0, 0.3, -2.5),
+          makeBox(5.35, 0.28, 0.24, 0, 0.3, 2.5),
+        ],
+        mats.concreteTrim,
+        true,
+        true,
+      );
+
+      // Colorful flowerbed clusters along perimeter
+      const flowerGeos: THREE.BufferGeometry[] = [];
+      const flowerCoords = [
+        [-1.8, 0.8], [-1.5, 1.2], [-1.2, 0.9],
+        [-0.8, 1.8], [-0.5, 1.6], [-0.2, 1.9],
+        [0.8, 1.8], [1.2, 1.6], [1.5, 1.9],
+        [-1.8, -0.8], [-1.5, -1.2],
+      ];
+      for (const [fx, fz] of flowerCoords) {
+        const flower = new THREE.DodecahedronGeometry(0.12, 0);
+        flower.translate(fx!, 0.38, fz!);
+        flowerGeos.push(flower);
+      }
+      addMergedBucket(group, flowerGeos, mats.flowerPink, true, true);
+    }
     return group;
   }
 
