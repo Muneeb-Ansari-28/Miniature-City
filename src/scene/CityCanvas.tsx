@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CAMERA_CONFIG, CAMERA_PRESETS } from '@/config/constants';
+import { AnimalRenderer } from '@/scene/AnimalRenderer';
 import { CameraRig } from '@/scene/CameraRig';
 import { CityBuildings } from '@/scene/CityBuildings';
 import { CityEnvironment } from '@/scene/CityEnvironment';
@@ -141,6 +142,7 @@ export function CityCanvas({ engine = defaultWorldEngine }: CityCanvasProps) {
         <InstancedProps city={engine.city} engine={engine} />
         <VehicleRenderer engine={engine} />
         <PedestrianRenderer engine={engine} />
+        <AnimalRenderer city={engine.city} engine={engine} />
         <MicroDetails city={engine.city} />
         <CameraRig engine={engine} />
         <PostFX />
