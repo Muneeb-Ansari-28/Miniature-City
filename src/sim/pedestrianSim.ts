@@ -92,14 +92,29 @@ export function buildSidewalkGraph(city: GeneratedCity): SidewalkGraph {
     if (lot.type === 'road_straight' || lot.type === 'road_intersection') continue;
     const { x, z } = lot.worldPos;
     const d = half - inset;
+
+    // For the Plaza Fountain lot, nudge the SW corner slightly towards the sidewalk curb
+    // so pedestrians turning the corner have generous clearance around the street burger kiosk
+    const isPlaza = lot.style === 'plaza_fountain' || lot.type === 'plaza';
+    const swX = isPlaza ? x - d - 0.12 : x - d;
+    const swZ = isPlaza ? z + d + 0.12 : z + d;
+
     const nw = getOrCreateNode(x - d, z - d);
     const ne = getOrCreateNode(x + d, z - d);
     const se = getOrCreateNode(x + d, z + d);
-    const sw = getOrCreateNode(x - d, z + d);
+    const sw = getOrCreateNode(swX, swZ);
 
     connect(nw, ne, false);
     connect(ne, se, false);
-    connect(se, sw, false);
+
+    // On Commercial Tower (row 1, col 4), do not connect SE to SW straight through
+    // the wall-mounted street vending machines and utility conduit.
+    // Pedestrians naturally circulate across the wide plaza promenade in front (z = -8.48).
+    const isCommercialTowerNorthOfPlaza = lot.row === 1 && lot.col === 4;
+    if (!isCommercialTowerNorthOfPlaza) {
+      connect(se, sw, false);
+    }
+
     connect(sw, nw, false);
 
     lotCorners.set(`${lot.row}_${lot.col}`, [nw, ne, se, sw]);

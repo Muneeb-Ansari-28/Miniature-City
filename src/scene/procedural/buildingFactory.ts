@@ -376,17 +376,17 @@ export function buildProceduralLotMesh(
 
     // --- B. DETAILED STEPPED ORNATE FOUNTAIN ---
     // Two-tier stepped outer plinth (warm uniform stone)
-    concreteTrimGeos.push(makeCyl(1.68, 1.74, 0.10, 24, 0, 0.36, 0));
-    concreteTrimGeos.push(makeCyl(1.54, 1.60, 0.10, 24, 0, 0.46, 0));
+    concreteTrimGeos.push(makeCyl(1.48, 1.54, 0.10, 24, 0, 0.36, 0));
+    concreteTrimGeos.push(makeCyl(1.36, 1.42, 0.10, 24, 0, 0.46, 0));
 
     // Sunken interior basin stone floor (underneath the water)
-    concreteTrimGeos.push(makeCyl(1.36, 1.36, 0.08, 24, 0, 0.48, 0));
+    concreteTrimGeos.push(makeCyl(1.22, 1.22, 0.08, 24, 0, 0.48, 0));
 
     // Hollow stone basin reservoir wall with moulded outer rim
     const basinShape = new THREE.Shape();
-    basinShape.absarc(0, 0, 1.48, 0, Math.PI * 2, false);
+    basinShape.absarc(0, 0, 1.34, 0, Math.PI * 2, false);
     const basinHole = new THREE.Path();
-    basinHole.absarc(0, 0, 1.30, 0, Math.PI * 2, true);
+    basinHole.absarc(0, 0, 1.18, 0, Math.PI * 2, true);
     basinShape.holes.push(basinHole);
     const basinRimGeo = new THREE.ExtrudeGeometry(basinShape, {
       depth: 0.34,
@@ -403,35 +403,35 @@ export function buildProceduralLotMesh(
 
     // 4 decorative carved stone relief blocks on outer rim
     for (const [bx, bz] of [
-      [1.46, 0],
-      [-1.46, 0],
-      [0, 1.46],
-      [0, -1.46],
+      [1.32, 0],
+      [-1.32, 0],
+      [0, 1.32],
+      [0, -1.32],
     ]) {
-      concreteTrimGeos.push(makeBox(0.14, 0.16, 0.14, bx, 0.68, bz));
+      concreteTrimGeos.push(makeBox(0.13, 0.15, 0.13, bx, 0.68, bz));
     }
 
     // Central fluted pedestal column
-    concreteTrimGeos.push(makeCyl(0.46, 0.54, 0.34, 16, 0, 0.58, 0));
-    concreteTrimGeos.push(makeCyl(0.30, 0.36, 0.62, 16, 0, 1.02, 0));
-    concreteTrimGeos.push(makeCyl(0.42, 0.32, 0.12, 16, 0, 1.35, 0));
+    concreteTrimGeos.push(makeCyl(0.40, 0.48, 0.34, 16, 0, 0.58, 0));
+    concreteTrimGeos.push(makeCyl(0.26, 0.32, 0.62, 16, 0, 1.02, 0));
+    concreteTrimGeos.push(makeCyl(0.38, 0.28, 0.12, 16, 0, 1.35, 0));
 
     // 4 brass lion water spout nozzles projecting from pedestal collar
     for (const [nx, nz, rx, rz] of [
-      [0.36, 0, 0, Math.PI / 2],
-      [-0.36, 0, 0, -Math.PI / 2],
-      [0, 0.36, -Math.PI / 2, 0],
-      [0, -0.36, Math.PI / 2, 0],
+      [0.32, 0, 0, Math.PI / 2],
+      [-0.32, 0, 0, -Math.PI / 2],
+      [0, 0.32, -Math.PI / 2, 0],
+      [0, -0.32, Math.PI / 2, 0],
     ]) {
-      metalDarkGeos.push(makeCyl(0.035, 0.045, 0.14, 8, nx, 1.33, nz, rx, rz));
+      metalDarkGeos.push(makeCyl(0.032, 0.042, 0.13, 8, nx, 1.33, nz, rx, rz));
     }
 
     // Hollow upper fluted basin bowl & rim
-    concreteTrimGeos.push(makeCyl(0.74, 0.34, 0.20, 16, 0, 1.46, 0));
+    concreteTrimGeos.push(makeCyl(0.66, 0.30, 0.20, 16, 0, 1.46, 0));
     const upperShape = new THREE.Shape();
-    upperShape.absarc(0, 0, 0.78, 0, Math.PI * 2, false);
+    upperShape.absarc(0, 0, 0.70, 0, Math.PI * 2, false);
     const upperHole = new THREE.Path();
-    upperHole.absarc(0, 0, 0.64, 0, Math.PI * 2, true);
+    upperHole.absarc(0, 0, 0.56, 0, Math.PI * 2, true);
     upperShape.holes.push(upperHole);
     const upperRimGeo = new THREE.ExtrudeGeometry(upperShape, {
       depth: 0.12,
@@ -447,65 +447,65 @@ export function buildProceduralLotMesh(
     concreteTrimGeos.push(upperRimGeo);
 
     // Upper tier column & carved finial
-    concreteTrimGeos.push(makeCyl(0.18, 0.24, 0.36, 12, 0, 1.82, 0));
-    concreteTrimGeos.push(makeCyl(0.28, 0.14, 0.20, 12, 0, 2.06, 0));
-    metalDarkGeos.push(makeCyl(0.06, 0.08, 0.12, 8, 0, 2.18, 0));
+    concreteTrimGeos.push(makeCyl(0.16, 0.22, 0.36, 12, 0, 1.82, 0));
+    concreteTrimGeos.push(makeCyl(0.26, 0.13, 0.20, 12, 0, 2.06, 0));
+    metalDarkGeos.push(makeCyl(0.055, 0.075, 0.12, 8, 0, 2.18, 0));
 
     // --- C. REALISTIC FOUNTAIN WATER & JETS ---
     // Sunken water volume (depth cylinder)
-    waterGeos.push(makeCyl(1.29, 1.29, 0.22, 24, 0, 0.60, 0));
+    waterGeos.push(makeCyl(1.17, 1.17, 0.22, 24, 0, 0.60, 0));
 
     // Lower pool surface ring (subdivided for vertex wave ripples, clearly sunken below the stone rim)
-    const waterRing = new THREE.RingGeometry(0.32, 1.30, 32, 8);
+    const waterRing = new THREE.RingGeometry(0.28, 1.18, 32, 8);
     waterRing.rotateX(-Math.PI / 2);
     waterRing.translate(0, 0.72, 0);
     waterGeos.push(waterRing);
 
     // Upper basin water pool
-    const upperWater = new THREE.RingGeometry(0.18, 0.65, 20, 4);
+    const upperWater = new THREE.RingGeometry(0.16, 0.56, 20, 4);
     upperWater.rotateX(-Math.PI / 2);
     upperWater.translate(0, 1.58, 0);
     waterGeos.push(upperWater);
 
     // 4 cascading waterfall sheets pouring from upper basin into lower pool
     for (const [wx, wz] of [
-      [0.68, 0],
-      [-0.68, 0],
-      [0, 0.68],
-      [0, -0.68],
+      [0.58, 0],
+      [-0.58, 0],
+      [0, 0.58],
+      [0, -0.58],
     ]) {
       const isX = Math.abs(wx) > 0.1;
-      const fall = new THREE.BoxGeometry(isX ? 0.07 : 0.20, 0.80, isX ? 0.20 : 0.07);
+      const fall = new THREE.BoxGeometry(isX ? 0.07 : 0.18, 0.80, isX ? 0.18 : 0.07);
       fall.translate(wx * 0.92, 1.15, wz * 0.92);
       waterFlowGeos.push(fall);
     }
 
     // Central vertical sparkling water jet plume
-    waterFlowGeos.push(makeCyl(0.05, 0.11, 0.44, 10, 0, 2.42, 0));
+    waterFlowGeos.push(makeCyl(0.045, 0.10, 0.44, 10, 0, 2.42, 0));
 
     // 4 shimmering apex water droplets
     for (const [dx, dz] of [
-      [0.06, 0],
-      [-0.06, 0],
-      [0, 0.06],
-      [0, -0.06],
+      [0.05, 0],
+      [-0.05, 0],
+      [0, 0.05],
+      [0, -0.05],
     ]) {
-      const drop = new THREE.SphereGeometry(0.038, 6, 6);
+      const drop = new THREE.SphereGeometry(0.035, 6, 6);
       drop.translate(dx, 2.66, dz);
       waterFlowGeos.push(drop);
     }
 
     // Frothy white splash foam ring around central pedestal
-    waterFoamGeos.push(makeCyl(0.40, 0.40, 0.02, 16, 0, 0.73, 0));
+    waterFoamGeos.push(makeCyl(0.34, 0.34, 0.02, 16, 0, 0.73, 0));
 
     // 4 splash foam patches beneath waterfalls
     for (const [fx, fz] of [
-      [0.68, 0],
-      [-0.68, 0],
-      [0, 0.68],
-      [0, -0.68],
+      [0.58, 0],
+      [-0.58, 0],
+      [0, 0.58],
+      [0, -0.58],
     ]) {
-      waterFoamGeos.push(makeCyl(0.14, 0.14, 0.02, 8, fx, 0.73, fz));
+      waterFoamGeos.push(makeCyl(0.13, 0.13, 0.02, 8, fx, 0.73, fz));
     }
 
     // --- D. TWO STREET VENDING MACHINES (Attached to North Building Wall) ---
@@ -581,76 +581,76 @@ export function buildProceduralLotMesh(
     metalDarkGeos.push(makeCyl(0.045, 0.045, 0.02, 8, 0.76, 0.18 + 0.68, binZ + 0.06));
     metalDarkGeos.push(makeCyl(0.045, 0.045, 0.02, 8, 0.88, 0.18 + 0.68, binZ - 0.06));
 
-    // --- E. DETAILED GOURMET BURGER KIOSK (-1.90, 2.10) ---
-    // Placed neatly in the South-West plaza apron with full clearance from the fountain
-    const kx = -1.90;
-    const kz = 2.10;
+    // --- E. DETAILED GOURMET BURGER KIOSK (-1.50, 1.80) ---
+    // Placed neatly in the South-West plaza apron with full clearance from the fountain and sidewalks
+    const kx = -1.50;
+    const kz = 1.80;
 
     // Concrete terrace foundation slab beneath the kiosk
-    concreteTrimGeos.push(makeBox(1.50, 0.14, 1.10, kx, 0.24, kz));
+    concreteTrimGeos.push(makeBox(1.28, 0.14, 0.76, kx, 0.24, kz));
 
     // Wooden Cart Body & Counter
-    woodDeckGeos.push(makeBox(1.22, 0.70, 0.70, kx, 0.18 + 0.35, kz));
-    metalDarkGeos.push(makeBox(1.26, 0.08, 0.74, kx, 0.18 + 0.04, kz));
-    concreteTrimGeos.push(makeBox(1.28, 0.06, 0.26, kx, 0.18 + 0.71, kz + 0.24));
+    woodDeckGeos.push(makeBox(1.14, 0.70, 0.62, kx, 0.18 + 0.35, kz));
+    metalDarkGeos.push(makeBox(1.18, 0.08, 0.66, kx, 0.18 + 0.04, kz));
+    concreteTrimGeos.push(makeBox(1.22, 0.06, 0.24, kx, 0.18 + 0.71, kz + 0.22));
 
     // 4 Black steel canopy poles
-    metalDarkGeos.push(makeCyl(0.022, 0.022, 1.15, 8, kx - 0.54, 0.18 + 1.26, kz - 0.28));
-    metalDarkGeos.push(makeCyl(0.022, 0.022, 1.15, 8, kx + 0.54, 0.18 + 1.26, kz - 0.28));
-    metalDarkGeos.push(makeCyl(0.022, 0.022, 1.15, 8, kx - 0.54, 0.18 + 1.26, kz + 0.28));
-    metalDarkGeos.push(makeCyl(0.022, 0.022, 1.15, 8, kx + 0.54, 0.18 + 1.26, kz + 0.28));
+    metalDarkGeos.push(makeCyl(0.022, 0.022, 1.15, 8, kx - 0.50, 0.18 + 1.26, kz - 0.25));
+    metalDarkGeos.push(makeCyl(0.022, 0.022, 1.15, 8, kx + 0.50, 0.18 + 1.26, kz - 0.25));
+    metalDarkGeos.push(makeCyl(0.022, 0.022, 1.15, 8, kx - 0.50, 0.18 + 1.26, kz + 0.25));
+    metalDarkGeos.push(makeCyl(0.022, 0.022, 1.15, 8, kx + 0.50, 0.18 + 1.26, kz + 0.25));
 
     // Striped Canopy Awning (alternating red and cream stripes)
     const stripeCount = 8;
-    const stripeW = 1.30 / stripeCount;
+    const stripeW = 1.22 / stripeCount;
     for (let st = 0; st < stripeCount; st++) {
-      const stX = kx - 0.65 + (st + 0.5) * stripeW;
+      const stX = kx - 0.61 + (st + 0.5) * stripeW;
       const targetGeos = st % 2 === 0 ? awningAGeos : awningBGeos;
-      const stripeMesh = new THREE.BoxGeometry(stripeW, 0.05, 1.00);
+      const stripeMesh = new THREE.BoxGeometry(stripeW, 0.05, 0.94);
       stripeMesh.rotateX(0.18);
       stripeMesh.translate(stX, 0.18 + 1.82, kz + 0.04);
       targetGeos.push(stripeMesh);
 
-      const valence = makeBox(stripeW * 0.95, 0.10, 0.02, stX, 0.18 + 1.70, kz + 0.53);
+      const valence = makeBox(stripeW * 0.95, 0.10, 0.02, stX, 0.18 + 1.70, kz + 0.49);
       targetGeos.push(valence);
     }
 
     // 3D Giant Cheeseburger Roof Emblem
-    burgerBunGeos.push(makeCyl(0.32, 0.34, 0.13, 12, kx, 0.18 + 2.18, kz));
+    burgerBunGeos.push(makeCyl(0.30, 0.32, 0.12, 12, kx, 0.18 + 2.18, kz));
     for (let s = 0; s < 8; s++) {
       const sa = (s / 8) * Math.PI * 2;
-      const seed = new THREE.BoxGeometry(0.018, 0.012, 0.025);
-      seed.translate(kx + Math.cos(sa) * 0.19, 0.18 + 2.25, kz + Math.sin(sa) * 0.19);
+      const seed = new THREE.BoxGeometry(0.016, 0.012, 0.022);
+      seed.translate(kx + Math.cos(sa) * 0.18, 0.18 + 2.24, kz + Math.sin(sa) * 0.18);
       awningBGeos.push(seed);
     }
-    burgerLettuceGeos.push(makeBox(0.66, 0.035, 0.66, kx, 0.18 + 2.11, kz, 0, Math.PI / 4));
-    burgerCheeseGeos.push(makeBox(0.62, 0.03, 0.62, kx, 0.18 + 2.07, kz));
-    burgerPattyGeos.push(makeCyl(0.33, 0.33, 0.08, 12, kx, 0.18 + 2.02, kz));
-    burgerBunGeos.push(makeCyl(0.32, 0.30, 0.08, 12, kx, 0.18 + 1.94, kz));
-    metalDarkGeos.push(makeCyl(0.018, 0.018, 0.18, 6, kx - 0.15, 0.18 + 1.86, kz));
-    metalDarkGeos.push(makeCyl(0.018, 0.018, 0.18, 6, kx + 0.15, 0.18 + 1.86, kz));
+    burgerLettuceGeos.push(makeBox(0.62, 0.035, 0.62, kx, 0.18 + 2.11, kz, 0, Math.PI / 4));
+    burgerCheeseGeos.push(makeBox(0.58, 0.03, 0.58, kx, 0.18 + 2.07, kz));
+    burgerPattyGeos.push(makeCyl(0.31, 0.31, 0.08, 12, kx, 0.18 + 2.02, kz));
+    burgerBunGeos.push(makeCyl(0.30, 0.28, 0.08, 12, kx, 0.18 + 1.94, kz));
+    metalDarkGeos.push(makeCyl(0.018, 0.018, 0.18, 6, kx - 0.14, 0.18 + 1.86, kz));
+    metalDarkGeos.push(makeCyl(0.018, 0.018, 0.18, 6, kx + 0.14, 0.18 + 1.86, kz));
 
     // Chalkboard menu sign on front of cart
-    metalDarkGeos.push(makeBox(0.58, 0.28, 0.03, kx, 0.18 + 0.40, kz + 0.36));
-    concreteTrimGeos.push(makeBox(0.40, 0.018, 0.04, kx, 0.18 + 0.46, kz + 0.365));
-    concreteTrimGeos.push(makeBox(0.30, 0.014, 0.04, kx, 0.18 + 0.40, kz + 0.365));
-    concreteTrimGeos.push(makeBox(0.35, 0.014, 0.04, kx, 0.18 + 0.34, kz + 0.365));
+    metalDarkGeos.push(makeBox(0.54, 0.26, 0.03, kx, 0.18 + 0.40, kz + 0.32));
+    concreteTrimGeos.push(makeBox(0.38, 0.018, 0.04, kx, 0.18 + 0.45, kz + 0.325));
+    concreteTrimGeos.push(makeBox(0.28, 0.014, 0.04, kx, 0.18 + 0.40, kz + 0.325));
+    concreteTrimGeos.push(makeBox(0.33, 0.014, 0.04, kx, 0.18 + 0.35, kz + 0.325));
 
     // Ketchup and mustard squeeze bottles on counter
-    ketchupGeos.push(makeCyl(0.03, 0.03, 0.11, 8, kx - 0.48, 0.18 + 0.79, kz + 0.25));
-    ketchupGeos.push(makeCyl(0.008, 0.018, 0.04, 8, kx - 0.48, 0.18 + 0.86, kz + 0.25));
-    mustardGeos.push(makeCyl(0.03, 0.03, 0.11, 8, kx - 0.38, 0.18 + 0.79, kz + 0.25));
-    mustardGeos.push(makeCyl(0.008, 0.018, 0.04, 8, kx - 0.38, 0.18 + 0.86, kz + 0.25));
+    ketchupGeos.push(makeCyl(0.028, 0.028, 0.11, 8, kx - 0.44, 0.18 + 0.79, kz + 0.22));
+    ketchupGeos.push(makeCyl(0.008, 0.016, 0.04, 8, kx - 0.44, 0.18 + 0.86, kz + 0.22));
+    mustardGeos.push(makeCyl(0.028, 0.028, 0.11, 8, kx - 0.35, 0.18 + 0.79, kz + 0.22));
+    mustardGeos.push(makeCyl(0.008, 0.016, 0.04, 8, kx - 0.35, 0.18 + 0.86, kz + 0.22));
 
     // Burger takeout boxes & chrome order bell
-    kraftBoxGeos.push(makeBox(0.16, 0.06, 0.16, kx - 0.18, 0.18 + 0.76, kz + 0.25));
-    kraftBoxGeos.push(makeBox(0.15, 0.06, 0.15, kx - 0.18, 0.18 + 0.82, kz + 0.25));
-    concreteTrimGeos.push(makeCyl(0.025, 0.04, 0.035, 8, kx + 0.02, 0.18 + 0.75, kz + 0.26));
+    kraftBoxGeos.push(makeBox(0.15, 0.06, 0.15, kx - 0.16, 0.18 + 0.76, kz + 0.22));
+    kraftBoxGeos.push(makeBox(0.14, 0.06, 0.14, kx - 0.16, 0.18 + 0.82, kz + 0.22));
+    concreteTrimGeos.push(makeCyl(0.025, 0.038, 0.035, 8, kx + 0.02, 0.18 + 0.75, kz + 0.23));
 
     // Griddle & warm hanging Edison light
-    concreteTrimGeos.push(makeBox(0.48, 0.035, 0.38, kx + 0.30, 0.18 + 0.71, kz - 0.08));
-    lanternAmberGeos.push(makeCyl(0.04, 0.04, 0.07, 8, kx, 0.18 + 1.62, kz + 0.15));
-    metalDarkGeos.push(makeCyl(0.008, 0.008, 0.20, 6, kx, 0.18 + 1.74, kz + 0.15));
+    concreteTrimGeos.push(makeBox(0.44, 0.035, 0.34, kx + 0.28, 0.18 + 0.71, kz - 0.06));
+    lanternAmberGeos.push(makeCyl(0.038, 0.038, 0.07, 8, kx, 0.18 + 1.62, kz + 0.12));
+    metalDarkGeos.push(makeCyl(0.008, 0.008, 0.20, 6, kx, 0.18 + 1.74, kz + 0.12));
 
     // --- MERGE ALL BUCKETS INTO DRAW CALLS ---
     addMergedBucket(group, concreteTrimGeos, mats.concreteTrim, true, true);
