@@ -48,9 +48,9 @@ export function CameraRig({ engine }: CameraRigProps) {
     if (!poi) return;
 
     if (poi.id === 'central-pocket-park') {
-      // Elevated unobstructed view framing both West Playground & East Botanical Garden
+      // Elevated unobstructed view from North avenue directly framing West Playground & East Botanical Garden
       transitionGoalTarget.current.set(poi.worldPos.x + 3.0, 1.2, poi.worldPos.z);
-      transitionGoalPos.current.set(poi.worldPos.x + 3.0, 17.5, poi.worldPos.z + 16.5);
+      transitionGoalPos.current.set(poi.worldPos.x + 3.0, 13.5, poi.worldPos.z - 10.5);
     } else if (poi.id === 'harbor-plaza') {
       transitionGoalTarget.current.set(poi.worldPos.x, 1.4, poi.worldPos.z);
       transitionGoalPos.current.set(poi.worldPos.x + 8.5, 12.0, poi.worldPos.z + 11.0);
