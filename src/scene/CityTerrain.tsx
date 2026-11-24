@@ -21,14 +21,17 @@ export function CityTerrain({ city }: CityTerrainProps) {
   const crosswalkRef = useRef<THREE.InstancedMesh>(null);
   const stopBarRef = useRef<THREE.InstancedMesh>(null);
   const sidewalkRef = useRef<THREE.InstancedMesh>(null);
+  const sidewalkSeamRef = useRef<THREE.InstancedMesh>(null);
 
   const islandSize = city.islandSize;
+  const blockFootprint = city.tileSize + (city.tileSize - ROAD_WIDTH) * 0.2;
 
-  const { dashes, crosswalks, stopBars, sidewalkLots } = useMemo(() => {
+  const { dashes, crosswalks, stopBars, sidewalkLots, sidewalkSeams } = useMemo(() => {
     const dashTransforms: { x: number; z: number; rotY: number }[] = [];
     const cwTransforms: { x: number; z: number; rotY: number }[] = [];
     const stopTransforms: { x: number; z: number; rotY: number }[] = [];
     const swLots: { x: number; z: number }[] = [];
+    const seamTransforms: { x: number; z: number; rotY: number }[] = [];
 
     const halfTile = city.tileSize * 0.5;
     const isRoad = (r: number, c: number) => {
@@ -78,11 +81,23 @@ export function CityTerrain({ city }: CityTerrainProps) {
         }
       } else {
         swLots.push({ x, z });
+        for (const offset of [-1.35, 0, 1.35]) {
+          seamTransforms.push(
+            { x: x + offset, z, rotY: Math.PI / 2 },
+            { x, z: z + offset, rotY: 0 },
+          );
+        }
       }
     }
 
-    return { dashes: dashTransforms, crosswalks: cwTransforms, stopBars: stopTransforms, sidewalkLots: swLots };
-  }, [city]);
+    return {
+      dashes: dashTransforms,
+      crosswalks: cwTransforms,
+      stopBars: stopTransforms,
+      sidewalkLots: swLots,
+      sidewalkSeams: seamTransforms,
+    };
+  }, [city, blockFootprint]);
 
   useEffect(() => {
     if (dashRef.current) {
@@ -128,13 +143,21 @@ export function CityTerrain({ city }: CityTerrainProps) {
       });
       sidewalkRef.current.instanceMatrix.needsUpdate = true;
     }
-  }, [dashes, crosswalks, stopBars, sidewalkLots]);
+    if (sidewalkSeamRef.current) {
+      sidewalkSeams.forEach((seam, i) => {
+        dummy.position.set(seam.x, SIDEWALK_HEIGHT + 0.003, seam.z);
+        dummy.rotation.set(0, seam.rotY, 0);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+        sidewalkSeamRef.current!.setMatrixAt(i, dummy.matrix);
+      });
+      sidewalkSeamRef.current.instanceMatrix.needsUpdate = true;
+    }
+  }, [dashes, crosswalks, stopBars, sidewalkLots, sidewalkSeams]);
 
   // Wet asphalt sheen when rain is active
   const asphaltRoughness = weather === 'rain' ? 0.24 : 0.78;
   const asphaltMetalness = weather === 'rain' ? 0.28 : 0.06;
-
-  const blockFootprint = city.tileSize + (city.tileSize - ROAD_WIDTH) * 0.2;
 
   return (
     <group name="city-terrain">
@@ -174,7 +197,7 @@ export function CityTerrain({ city }: CityTerrainProps) {
       <mesh position={[0, 0.015, 0]} receiveShadow>
         <boxGeometry args={[islandSize - 0.6, 0.04, islandSize - 0.6]} />
         <meshStandardMaterial
-          color="#2e2f38"
+          color="#373941"
           roughness={asphaltRoughness}
           metalness={asphaltMetalness}
         />
@@ -188,7 +211,17 @@ export function CityTerrain({ city }: CityTerrainProps) {
         castShadow
       >
         <boxGeometry args={[blockFootprint, SIDEWALK_HEIGHT, blockFootprint]} />
-        <meshStandardMaterial color="#d4ccbe" roughness={0.82} />
+        <meshStandardMaterial color="#ccc4b7" roughness={0.82} />
+      </instancedMesh>
+
+      {/* Quiet paver joints break up broad sidewalk slabs without adding individual draw calls. */}
+      <instancedMesh
+        ref={sidewalkSeamRef}
+        args={[undefined, undefined, sidewalkSeams.length]}
+        receiveShadow
+      >
+        <boxGeometry args={[blockFootprint - 0.16, 0.005, 0.018]} />
+        <meshStandardMaterial color="#c4bcae" roughness={0.9} />
       </instancedMesh>
 
       {/* Instanced dashed lane center markings */}

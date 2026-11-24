@@ -9,6 +9,8 @@ class CityAudioManager {
   private masterGain: GainNode | null = null;
   private cityGain: GainNode | null = null;
   private rainGain: GainNode | null = null;
+  private birdGain: GainNode | null = null;
+  private birdTimer: ReturnType<typeof setTimeout> | null = null;
   private isEnabled = false;
   private weather: WeatherMode = 'clear';
 
@@ -66,10 +68,47 @@ class CityAudioManager {
     rainGain.connect(masterGain);
     rainSource.start();
 
+    const birdGain = ctx.createGain();
+    birdGain.gain.value = 0.16;
+    birdGain.connect(masterGain);
+
     this.ctx = ctx;
     this.masterGain = masterGain;
     this.cityGain = cityGain;
     this.rainGain = rainGain;
+    this.birdGain = birdGain;
+  }
+
+  private scheduleBirdChirp(): void {
+    if (!this.isEnabled || !this.ctx || this.birdTimer !== null) return;
+
+    this.birdTimer = setTimeout(() => {
+      this.birdTimer = null;
+      if (!this.isEnabled || !this.ctx || !this.birdGain) return;
+
+      const ctx = this.ctx;
+      const startAt = ctx.currentTime;
+      const oscillator = ctx.createOscillator();
+      const envelope = ctx.createGain();
+      const panner = ctx.createStereoPanner();
+
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(2400 + Math.random() * 500, startAt);
+      oscillator.frequency.exponentialRampToValueAtTime(3300 + Math.random() * 500, startAt + 0.055);
+      oscillator.frequency.exponentialRampToValueAtTime(1900 + Math.random() * 300, startAt + 0.19);
+      envelope.gain.setValueAtTime(0.0001, startAt);
+      envelope.gain.exponentialRampToValueAtTime(0.07, startAt + 0.025);
+      envelope.gain.exponentialRampToValueAtTime(0.0001, startAt + 0.21);
+      panner.pan.value = (Math.random() - 0.5) * 1.2;
+
+      oscillator.connect(envelope);
+      envelope.connect(panner);
+      panner.connect(this.birdGain);
+      oscillator.start(startAt);
+      oscillator.stop(startAt + 0.22);
+
+      this.scheduleBirdChirp();
+    }, 4500 + Math.random() * 8000);
   }
 
   setEnabled(enabled: boolean): void {
@@ -79,6 +118,10 @@ class CityAudioManager {
       if (this.ctx?.state === 'suspended') {
         void this.ctx.resume();
       }
+      this.scheduleBirdChirp();
+    } else if (this.birdTimer !== null) {
+      clearTimeout(this.birdTimer);
+      this.birdTimer = null;
     }
     this.syncGains();
   }
@@ -93,15 +136,21 @@ class CityAudioManager {
     const now = this.ctx.currentTime;
     this.masterGain.gain.setTargetAtTime(this.isEnabled ? 0.28 : 0.0, now, 0.25);
     this.rainGain.gain.setTargetAtTime(this.weather === 'rain' ? 0.55 : 0.0, now, 0.35);
+    this.birdGain?.gain.setTargetAtTime(this.weather === 'rain' ? 0.07 : 0.16, now, 0.4);
   }
 
   dispose(): void {
+    if (this.birdTimer !== null) {
+      clearTimeout(this.birdTimer);
+      this.birdTimer = null;
+    }
     if (this.ctx) {
       void this.ctx.close();
       this.ctx = null;
       this.masterGain = null;
       this.cityGain = null;
       this.rainGain = null;
+      this.birdGain = null;
     }
   }
 }

@@ -116,7 +116,8 @@ export function CityEnvironment({ engine }: CityEnvironmentProps) {
     }
 
     if (hemiLightRef.current) {
-      hemiLightRef.current.intensity = atm.ambientIntensity * (isRain ? 0.85 : 1.0);
+      // A small fill lift keeps shaded street details legible at sunset and after dark.
+      hemiLightRef.current.intensity = Math.min(1.05, atm.ambientIntensity + 0.1) * (isRain ? 0.9 : 1.0);
       hemiLightRef.current.color.set(atm.skyHorizonColor);
     }
 

@@ -17,6 +17,10 @@ interface AnimalRendererProps {
 
 const scratchObj = new THREE.Object3D();
 const scratchColor = new THREE.Color();
+const leashUp = new THREE.Vector3(0, 1, 0);
+const leashStart = new THREE.Vector3();
+const leashEnd = new THREE.Vector3();
+const leashDirection = new THREE.Vector3();
 
 function ensureIndexed(geo: THREE.BufferGeometry): THREE.BufferGeometry {
   if (!geo.index) {
@@ -221,11 +225,13 @@ export function AnimalRenderer({ city, engine }: AnimalRendererProps) {
   const animalsRef = useRef<AnimalAgent[]>([]);
 
   const dogMeshRef = useRef<THREE.InstancedMesh>(null);
+  const leashMeshRef = useRef<THREE.InstancedMesh>(null);
   const catMeshRef = useRef<THREE.InstancedMesh>(null);
   const pigeonMeshRef = useRef<THREE.InstancedMesh>(null);
   const nestMeshRef = useRef<THREE.InstancedMesh>(null);
 
   const dogGeo = useMemo(() => createDogGeometry(), []);
+  const leashGeo = useMemo(() => new THREE.CylinderGeometry(0.012, 0.012, 1, 4), []);
   const catGeo = useMemo(() => createCatGeometry(), []);
   const pigeonGeo = useMemo(() => createPigeonGeometry(), []);
   const nestGeo = useMemo(() => createBirdNestGeometry(), []);
@@ -238,11 +244,12 @@ export function AnimalRenderer({ city, engine }: AnimalRendererProps) {
   useEffect(() => {
     return () => {
       dogGeo.dispose();
+      leashGeo.dispose();
       catGeo.dispose();
       pigeonGeo.dispose();
       nestGeo.dispose();
     };
-  }, [dogGeo, catGeo, pigeonGeo, nestGeo]);
+  }, [dogGeo, leashGeo, catGeo, pigeonGeo, nestGeo]);
 
   // Initial color application
   useEffect(() => {
@@ -314,6 +321,36 @@ export function AnimalRenderer({ city, engine }: AnimalRendererProps) {
       dogMeshRef.current.instanceMatrix.needsUpdate = true;
     }
 
+    // Leashes follow the selected owners; idle and unowned dogs have no leash instance.
+    if (leashMeshRef.current) {
+      dogs.forEach((dog, i) => {
+        const owner = dog.pedestrianOwnerId
+          ? engine.pedestrians.find((pedestrian) => pedestrian.id === dog.pedestrianOwnerId)
+          : undefined;
+        if (!owner || owner.state !== 'walking' || dog.state !== 'walking') {
+          scratchObj.position.set(0, -999, 0);
+          scratchObj.scale.set(0, 0, 0);
+        } else {
+          leashStart.set(dog.position.x, dog.position.y + 0.29, dog.position.z);
+          leashEnd.set(owner.position.x, owner.position.y + 0.58, owner.position.z);
+          leashDirection.subVectors(leashEnd, leashStart);
+          const leashLength = leashDirection.length();
+          scratchObj.position.copy(leashStart).add(leashEnd).multiplyScalar(0.5);
+          scratchObj.quaternion.setFromUnitVectors(leashUp, leashDirection.normalize());
+          scratchObj.scale.set(1, leashLength, 1);
+        }
+        scratchObj.updateMatrix();
+        leashMeshRef.current!.setMatrixAt(i, scratchObj.matrix);
+      });
+      for (let i = dogs.length; i < 6; i++) {
+        scratchObj.position.set(0, -999, 0);
+        scratchObj.scale.set(0, 0, 0);
+        scratchObj.updateMatrix();
+        leashMeshRef.current.setMatrixAt(i, scratchObj.matrix);
+      }
+      leashMeshRef.current.instanceMatrix.needsUpdate = true;
+    }
+
     // 2. Cats: subtle resting breathing and occasional tail twitch
     if (catMeshRef.current) {
       cats.forEach((c, i) => {
@@ -379,6 +416,10 @@ export function AnimalRenderer({ city, engine }: AnimalRendererProps) {
       {/* Low-poly Dogs */}
       <instancedMesh ref={dogMeshRef} args={[dogGeo, undefined, 6]} castShadow receiveShadow>
         <meshStandardMaterial roughness={0.75} />
+      </instancedMesh>
+
+      <instancedMesh ref={leashMeshRef} args={[leashGeo, undefined, 6]}>
+        <meshStandardMaterial color="#493629" roughness={0.9} />
       </instancedMesh>
 
       {/* Low-poly Cats */}

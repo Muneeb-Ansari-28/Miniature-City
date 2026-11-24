@@ -1054,6 +1054,24 @@ export function buildProceduralLotMesh(
       );
     }
   }
+
+  const hasRoofAccessHatch =
+    (lot.row + lot.col) % 2 === 0 &&
+    !isCommercialTower &&
+    !isAptBalcony &&
+    !isBurgerDiner &&
+    !isRamen &&
+    lot.rooftopProp !== 'coffee_cup' &&
+    lot.rooftopProp !== 'burger' &&
+    lot.rooftopProp !== 'ramen_bowl';
+  if (hasRoofAccessHatch) {
+    const hatchX = -1.4;
+    const hatchZ = zOffset + 1.15;
+    const hatchY = 0.18 + height + 0.19;
+    metalGeos.push(makeBox(0.8, 0.12, 0.7, hatchX, hatchY, hatchZ));
+    trimGeos.push(makeBox(0.12, 0.035, 0.06, hatchX, hatchY + 0.075, hatchZ));
+  }
+
   if (lot.rooftopProp === 'antenna' || isAptBalcony) {
     metalGeos.push(
       makeCyl(0.03, 0.04, 1.6, 6, -1.2, 0.18 + height + 0.95, zOffset - 0.8),

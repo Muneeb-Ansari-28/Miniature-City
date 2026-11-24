@@ -1,4 +1,4 @@
-import { Bloom, EffectComposer, ToneMapping } from '@react-three/postprocessing';
+import { Bloom, EffectComposer, N8AO, ToneMapping } from '@react-three/postprocessing';
 import { ToneMappingMode } from 'postprocessing';
 import { useCityStore } from '@/store/useCityStore';
 
@@ -15,6 +15,14 @@ export function PostFX() {
 
   return (
     <EffectComposer multisampling={0}>
+      <N8AO
+        quality="performance"
+        halfRes
+        aoRadius={1.1}
+        intensity={0.55}
+        aoSamples={4}
+        denoiseSamples={2}
+      />
       <Bloom
         intensity={1.15}
         luminanceThreshold={0.92}
