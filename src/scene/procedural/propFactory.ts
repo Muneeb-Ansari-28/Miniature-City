@@ -68,10 +68,10 @@ export function computeCityPropLayout(city: GeneratedCity): CityPropLayout {
       if (isWestPlayground) {
         // West Lot: Playground with lush Oaks and weeping Willows around perimeter
         const westTrees: [number, number, number, TreeSpecies, string][] = [
-          [-1.9, -1.85, 1.15, 'oak', TREE_SPECIES_PALETTES.oak.canopyColors[0]!],
-          [1.85, -1.85, 1.1, 'oak', TREE_SPECIES_PALETTES.oak.canopyColors[1]!],
-          [-1.9, 1.85, 1.05, 'willow', TREE_SPECIES_PALETTES.willow.canopyColors[0]!],
-          [1.85, 1.85, 1.0, 'willow', TREE_SPECIES_PALETTES.willow.canopyColors[1]!],
+          [-1.9, -1.85, 0.78, 'oak', TREE_SPECIES_PALETTES.oak.canopyColors[0]!],
+          [1.85, -1.85, 0.76, 'oak', TREE_SPECIES_PALETTES.oak.canopyColors[1]!],
+          [-1.9, 1.85, 0.74, 'willow', TREE_SPECIES_PALETTES.willow.canopyColors[0]!],
+          [1.85, 1.85, 0.72, 'willow', TREE_SPECIES_PALETTES.willow.canopyColors[1]!],
         ];
         for (const [dx, dz, scale, species, col] of westTrees) {
           trees.push({
@@ -85,11 +85,11 @@ export function computeCityPropLayout(city: GeneratedCity): CityPropLayout {
       } else {
         // East Lot: Botanical Garden with Flowering Sakura & Conifer Pines
         const eastTrees: [number, number, number, TreeSpecies, string][] = [
-          [-1.85, -1.75, 1.15, 'sakura', TREE_SPECIES_PALETTES.sakura.canopyColors[0]!],
-          [1.75, -1.75, 1.1, 'sakura', TREE_SPECIES_PALETTES.sakura.canopyColors[1]!],
-          [-1.8, 1.75, 1.1, 'pine', TREE_SPECIES_PALETTES.pine.canopyColors[0]!],
-          [1.8, 1.75, 1.15, 'pine', TREE_SPECIES_PALETTES.pine.canopyColors[1]!],
-          [0.0, 1.9, 0.95, 'sakura', TREE_SPECIES_PALETTES.sakura.canopyColors[2]!],
+          [-1.85, -1.75, 0.76, 'sakura', TREE_SPECIES_PALETTES.sakura.canopyColors[0]!],
+          [1.75, -1.75, 0.74, 'sakura', TREE_SPECIES_PALETTES.sakura.canopyColors[1]!],
+          [-1.8, 1.75, 0.74, 'pine', TREE_SPECIES_PALETTES.pine.canopyColors[0]!],
+          [1.8, 1.75, 0.76, 'pine', TREE_SPECIES_PALETTES.pine.canopyColors[1]!],
+          [0.0, 1.9, 0.7, 'sakura', TREE_SPECIES_PALETTES.sakura.canopyColors[2]!],
         ];
         for (const [dx, dz, scale, species, col] of eastTrees) {
           trees.push({
@@ -323,14 +323,14 @@ export function computeCityPropLayout(city: GeneratedCity): CityPropLayout {
   // 4. Wall-mounted HVAC compressor units (mounted flush with building exterior walls)
   wallAcUnits.push(
     // Apartment Balcony (x: -12, z: -12), east brick facade at x = -9.68
-    { position: { x: -9.54, y: SIDEWALK_HEIGHT + 2.4, z: -11.2 }, rotationY: -Math.PI * 0.5, scale: 0.9 },
-    { position: { x: -9.54, y: SIDEWALK_HEIGHT + 3.8, z: -12.8 }, rotationY: -Math.PI * 0.5, scale: 0.9 },
+    { position: { x: -9.54, y: SIDEWALK_HEIGHT + 2.4, z: -11.2 }, rotationY: Math.PI * 0.5, scale: 0.9 },
+    { position: { x: -9.54, y: SIDEWALK_HEIGHT + 3.8, z: -12.8 }, rotationY: Math.PI * 0.5, scale: 0.9 },
     // Apartment Warm (x: -12, z: -6, rotY: PI/2), east wall at x = -9.78
-    { position: { x: -9.64, y: SIDEWALK_HEIGHT + 2.5, z: -6.9 }, rotationY: -Math.PI * 0.5, scale: 0.9 },
-    { position: { x: -9.64, y: SIDEWALK_HEIGHT + 3.9, z: -5.1 }, rotationY: -Math.PI * 0.5, scale: 0.9 },
+    { position: { x: -9.64, y: SIDEWALK_HEIGHT + 2.5, z: -6.9 }, rotationY: Math.PI * 0.5, scale: 0.9 },
+    { position: { x: -9.64, y: SIDEWALK_HEIGHT + 3.9, z: -5.1 }, rotationY: Math.PI * 0.5, scale: 0.9 },
     // Commercial Tower (x: 6, z: -12), west wall at x = 3.68
-    { position: { x: 3.82, y: SIDEWALK_HEIGHT + 3.2, z: -11.3 }, rotationY: Math.PI * 0.5, scale: 0.9 },
-    { position: { x: 3.82, y: SIDEWALK_HEIGHT + 4.8, z: -12.7 }, rotationY: Math.PI * 0.5, scale: 0.9 },
+    { position: { x: 3.82, y: SIDEWALK_HEIGHT + 3.2, z: -11.3 }, rotationY: -Math.PI * 0.5, scale: 0.9 },
+    { position: { x: 3.82, y: SIDEWALK_HEIGHT + 4.8, z: -12.7 }, rotationY: -Math.PI * 0.5, scale: 0.9 },
     // South Apartment (x: -12, z: 12, rotY: PI), north wall at z = 9.78
     { position: { x: -11.2, y: SIDEWALK_HEIGHT + 2.8, z: 9.64 }, rotationY: Math.PI, scale: 0.9 },
   );

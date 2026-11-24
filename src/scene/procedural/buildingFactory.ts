@@ -14,7 +14,6 @@ export interface BuildingSharedMaterials {
   litWindowAmber: THREE.MeshStandardMaterial;
   litWindowPeach: THREE.MeshStandardMaterial;
   dimWindow: THREE.MeshStandardMaterial;
-  roofDark: THREE.MeshStandardMaterial;
   concreteTrim: THREE.MeshStandardMaterial;
   concreteDark: THREE.MeshStandardMaterial;
   woodTrim: THREE.MeshStandardMaterial;
@@ -81,10 +80,6 @@ export function createBuildingSharedMaterials(): BuildingSharedMaterials {
       emissiveIntensity: 0.1,
       roughness: 0.35,
       metalness: 0.3,
-    }),
-    roofDark: new THREE.MeshStandardMaterial({
-      color: '#34333d',
-      roughness: 0.9,
     }),
     concreteTrim: new THREE.MeshStandardMaterial({
       color: '#d6cdbd',
@@ -1044,39 +1039,20 @@ export function buildProceduralLotMesh(
     group.add(topBun);
   }
 
-  // C. Rooftop Wooden Water Tower on Stilt Frame (on Commercial Tower)
-  if (isCommercialTower) {
-    const wx = 0.85;
-    const wy = 0.18 + height + 0.95;
-    const wz = zOffset - 0.35;
-
-    // 4-legged metal stilt frame with cross braces
-    metalGeos.push(
-      makeBox(0.08, 0.95, 0.08, wx - 0.5, wy - 0.45, wz - 0.5),
-      makeBox(0.08, 0.95, 0.08, wx + 0.5, wy - 0.45, wz - 0.5),
-      makeBox(0.08, 0.95, 0.08, wx - 0.5, wy - 0.45, wz + 0.5),
-      makeBox(0.08, 0.95, 0.08, wx + 0.5, wy - 0.45, wz + 0.5),
-      makeBox(1.15, 0.08, 1.15, wx, wy + 0.04, wz),
-    );
-
-    // Wooden barrel
-    const barrel = new THREE.Mesh(makeCyl(0.68, 0.68, 1.05, 14, wx, wy + 0.58, wz), mats.woodTrim);
-    barrel.castShadow = true;
-    group.add(barrel);
-
-    // Conical metal roof
-    const coneRoof = new THREE.Mesh(new THREE.ConeGeometry(0.78, 0.52, 14), mats.roofDark);
-    coneRoof.position.set(wx, wy + 1.35, wz);
-    coneRoof.castShadow = true;
-    group.add(coneRoof);
-  }
-
   // D. General AC Units & Rooftop Antennas
   if (lot.rooftopProp === 'ac_units' || lot.rooftopProp === 'antenna' || (!isBurgerDiner && !isAptBalcony && !isRamen)) {
-    metalGeos.push(
-      makeBox(0.9, 0.5, 0.68, -0.85, 0.18 + height + 0.42, zOffset - 0.4),
-      makeBox(0.75, 0.44, 0.62, 0.8, 0.18 + height + 0.39, zOffset - 0.45),
-    );
+    if (isCommercialTower) {
+      // Keep both compressors clear of the separately modeled water tower at the roof's east edge.
+      metalGeos.push(
+        makeBox(0.9, 0.5, 0.68, -1.45, 0.18 + height + 0.42, zOffset + 0.75),
+        makeBox(0.75, 0.44, 0.62, -1.45, 0.18 + height + 0.39, zOffset - 0.75),
+      );
+    } else {
+      metalGeos.push(
+        makeBox(0.9, 0.5, 0.68, -0.85, 0.18 + height + 0.42, zOffset - 0.4),
+        makeBox(0.75, 0.44, 0.62, 0.8, 0.18 + height + 0.39, zOffset - 0.45),
+      );
+    }
   }
   if (lot.rooftopProp === 'antenna' || isAptBalcony) {
     metalGeos.push(

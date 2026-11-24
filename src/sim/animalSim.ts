@@ -22,7 +22,7 @@ export interface AnimalAgent {
  * Creates the initial living roster of urban pets, strays, plaza pigeons, and tree nests.
  */
 export function createAnimalRoster(
-  _city: GeneratedCity,
+  city: GeneratedCity,
   pedestrians: PedestrianAgent[],
 ): AnimalAgent[] {
   const animals: AnimalAgent[] = [];
@@ -88,16 +88,28 @@ export function createAnimalRoster(
     });
   }
 
-  // Resting dog 4: Calm companion resting on cafe patio sidewalk
-  animals.push({
-    id: `animal_${idCounter++}`,
-    type: 'dog',
-    position: { x: 7.2, y: SIDEWALK_HEIGHT + 0.02, z: -1.2 },
-    rotationY: -Math.PI * 0.4,
-    scale: 0.88,
-    color: '#d48c46', // Shiba Inu
-    state: 'idle',
-  });
+  // Resting dog 4: Keep the cafe companion on the cafe's frontage, away from the roadway.
+  const dogPatioLot =
+    city.lots.find((lot) => lot.poiId === 'bean-steam-cafe') ??
+    city.lots.find((lot) => lot.type === 'restaurant');
+  if (dogPatioLot) {
+    const localZ = city.tileSize * 0.5 - 0.2;
+    const cos = Math.cos(dogPatioLot.rotationY);
+    const sin = Math.sin(dogPatioLot.rotationY);
+    animals.push({
+      id: `animal_${idCounter++}`,
+      type: 'dog',
+      position: {
+        x: dogPatioLot.worldPos.x + localZ * sin,
+        y: SIDEWALK_HEIGHT + 0.02,
+        z: dogPatioLot.worldPos.z + localZ * cos,
+      },
+      rotationY: dogPatioLot.rotationY + Math.PI,
+      scale: 0.88,
+      color: '#d48c46', // Shiba Inu
+      state: 'idle',
+    });
+  }
 
   // 2. Cats (4 total: peaceful loafing & basking in sunlight)
   // Cat 1: Curled up asleep on a park bench in West Playground
@@ -190,53 +202,40 @@ export function createAnimalRoster(
     });
   }
 
-  // 4. Bird Nests (4 total: snug in real tree branch forks and rooftop gravel beds, never hanging in mid-air)
-  animals.push({
-    id: `animal_${idCounter++}`,
-    type: 'bird_nest',
-    // In West Oak Tree branch fork
-    position: { x: -2.12, y: SIDEWALK_HEIGHT + 0.14 + 1.32, z: 4.2 },
-    rotationY: 0.4,
-    scale: 0.5,
-    color: '#8b6f47',
-    state: 'idle',
-    nestEggs: 3,
-  });
+  // 4. Bird nests: derive their world positions from real roof lots and their configured heights.
+  const roofLots = [
+    city.lots.find((lot) => lot.style === 'apartment_balcony'),
+    city.lots.find((lot) => lot.style === 'commercial_tower'),
+    city.lots.find((lot) => lot.style === 'apartment_warm'),
+    city.lots.find((lot) => lot.style === 'corner_shop'),
+  ].filter((lot) => lot !== undefined);
+  const roofOffsets: [number, number][] = [
+    [2.0, 2.0],
+    [-2.0, 2.0],
+    [-2.0, -2.0],
+    [2.0, -2.0],
+  ];
+  const nestColors = ['#8b6f47', '#7a5a3a', '#9c7b52', '#826544'];
 
-  animals.push({
-    id: `animal_${idCounter++}`,
-    type: 'bird_nest',
-    // In East Sakura Tree branch fork under floral canopy
-    position: { x: 3.9, y: SIDEWALK_HEIGHT + 0.14 + 1.38, z: 4.35 },
-    rotationY: -0.6,
-    scale: 0.5,
-    color: '#7a5a3a',
-    state: 'idle',
-    nestEggs: 3,
-  });
-
-  animals.push({
-    id: `animal_${idCounter++}`,
-    type: 'bird_nest',
-    // On rooftop gravel corner of Apartment Balcony (height: 6.4)
-    position: { x: -10.2, y: SIDEWALK_HEIGHT + 6.4 + 0.08, z: -10.3 },
-    rotationY: 0.8,
-    scale: 0.48,
-    color: '#9c7b52',
-    state: 'idle',
-    nestEggs: 3,
-  });
-
-  animals.push({
-    id: `animal_${idCounter++}`,
-    type: 'bird_nest',
-    // On rooftop gravel corner of Commercial Tower (height: 7.4)
-    position: { x: 4.4, y: SIDEWALK_HEIGHT + 7.4 + 0.08, z: -10.4 },
-    rotationY: -0.5,
-    scale: 0.48,
-    color: '#826544',
-    state: 'idle',
-    nestEggs: 3,
+  roofLots.forEach((lot, i) => {
+    const [localX, localZ] = roofOffsets[i]!;
+    const cos = Math.cos(lot.rotationY);
+    const sin = Math.sin(lot.rotationY);
+    animals.push({
+      id: `animal_${idCounter++}`,
+      type: 'bird_nest',
+      position: {
+        x: lot.worldPos.x + localX * cos + localZ * sin,
+        // The roof cap's top surface sits 0.26 units above the configured wall height.
+        y: lot.worldPos.y + SIDEWALK_HEIGHT + (lot.height ?? 4) + 0.26,
+        z: lot.worldPos.z - localX * sin + localZ * cos,
+      },
+      rotationY: i * 0.6,
+      scale: 0.48,
+      color: nestColors[i % nestColors.length]!,
+      state: 'idle',
+      nestEggs: 3,
+    });
   });
 
   return animals;
